@@ -1,26 +1,71 @@
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 export const Testimonials2 = (props) => {
-  const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isPublishable, setIsPublishable] = useState(false);
   const [category, setCategory] = useState("");
   const [submittedMessages, setSubmittedMessages] = useState([]);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const { user, isAuthenticated } = useAuth();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const newMessage = {
-      name: isAnonymous ? "Anonym" : name || "Anonym",
-      text,
-      category,
-    };
+    if (!isAuthenticated || !user?.id) {
+      setSubmitStatus({ type: "error", message: "Najprv sa prihláste, aby ste mohli odoslať správu." });
+      return;
+    }
 
-    setSubmittedMessages([newMessage, ...submittedMessages]);
-    setName("");
-    setText("");
-    setCategory("");
-    setIsAnonymous(false);
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const payload = {
+        kategoria: category,
+        obsah_prispevku: text,
+        anonymne: isAnonymous,
+        publikovatelne: isPublishable,
+        id_uzivatela: user.id,
+      };
+
+      const resp = await fetch(`${API_BASE}/api/trust-box`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || "Nepodarilo sa odoslať správu.");
+      }
+
+      const displayName = isAnonymous ? "Anonym" : user?.name || "Anonym";
+      const newMessage = {
+        id: data?.id_prispevku,
+        name: displayName,
+        text,
+        category,
+      };
+
+      setSubmittedMessages([newMessage, ...submittedMessages]);
+      setSubmitStatus({ type: "success", message: "Správa bola úspešne odoslaná do schránky dôvery." });
+
+      // Reset form
+      setText("");
+      setCategory("");
+      setIsAnonymous(false);
+      setIsPublishable(false);
+    } catch (err) {
+      setSubmitStatus({ type: "error", message: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,6 +87,21 @@ export const Testimonials2 = (props) => {
         {/* Formulár na odoslanie správy */}
         <div className="trust-box-form">
           <h3>Pridať novú správu</h3>
+          {submitStatus && (
+            <div
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                marginBottom: "12px",
+                background: submitStatus.type === "success" ? "#d4edda" : "#f8d7da",
+                color: submitStatus.type === "success" ? "#155724" : "#721c24",
+                border: submitStatus.type === "success" ? "1px solid #c3e6cb" : "1px solid #f5c6cb",
+              }}
+            >
+              {submitStatus.message}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
 
             <div className="form-group mb-3">
@@ -78,35 +138,54 @@ export const Testimonials2 = (props) => {
             <div
               style={{
                 display: "flex",
+                flexWrap: "wrap",
+                gap: "12px",
                 alignItems: "center",
                 justifyContent: "space-between",
                 width: "100%",
-                marginTop: "-15px",
-                marginBottom: "50px",
+                marginTop: "-10px",
+                marginBottom: "40px",
               }}
             >
-              <div className="form-check mb-0">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="anonCheck"
-                  checked={isAnonymous}
-                  onChange={() => setIsAnonymous(!isAnonymous)}
-                />
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <label
-                  className="form-check-label"
-                  htmlFor="anonCheck"
-                  style={{ marginRight: "10px" }} 
+                  className="form-check d-flex align-items-center mb-0"
+                  style={{ padding: "10px 12px", border: "1px solid #e0e0e0", borderRadius: "10px", background: "#f9fafb" }}
                 >
-                  Odoslať anonymne
+                  <input
+                    type="checkbox"
+                    className="form-check-input me-2"
+                    id="anonCheck"
+                    checked={isAnonymous}
+                    onChange={() => setIsAnonymous(!isAnonymous)}
+                    style={{ marginTop: 0 }}
+                  />
+                  <span style={{ fontWeight: 600, color: "#333" }}> Odoslať anonymne</span>
+                </label>
+
+                <label
+                  className="form-check d-flex align-items-center mb-0"
+                  style={{ padding: "10px 12px", border: "1px solid #e0e0e0", borderRadius: "10px", background: "#f9fafb" }}
+                >
+                  <input
+                    type="checkbox"
+                    className="form-check-input me-2"
+                    id="publishCheck"
+                    checked={isPublishable}
+                    onChange={() => setIsPublishable(!isPublishable)}
+                    style={{ marginTop: 0 }}
+                  />
+                  <span style={{ fontWeight: 600, color: "#333" }}> Môže byť publikované</span>
                 </label>
               </div>
 
               <button
                 type="submit"
                 className="btn btn-primary px-4 rounded-pill"
+                disabled={isSubmitting}
+                style={{ minWidth: "180px", fontWeight: 700 }}
               >
-                Odoslať novú správu
+                {isSubmitting ? "Odosielam..." : "Odoslať novú správu"}
               </button>
             </div>
 

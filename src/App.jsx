@@ -18,7 +18,10 @@ import ReservationSystem from "./components/ReservationSystem";
 import QuickHelp from "./components/QuickHelp";
 import Expert from "./components/Expert.js";
 import ChatIconButton from "./components/ChatIconButton";
-
+import { UserDashboard } from "./components/UserDashboard";
+import { AdminDashboard } from "./components/AdminDashboard";
+import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
 
 import SmoothScroll from "smooth-scroll";
 import "./App.css";
@@ -63,13 +66,81 @@ const App = () => {
   }, []);
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage data={landingPageData} />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/home" element={<MainPage data={landingPageData} />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Verejná stránka - landing page */}
+          <Route path="/" element={<LandingPage data={landingPageData} />} />
+          
+          {/* Prihlásenie - dostupné len pre neprihlásených */}
+          <Route 
+            path="/login" 
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            } 
+          />
+          
+          {/* Užívateľské rozhranie - scrollovacia stránka pre prihlásených užívateľov */}
+          <Route 
+            path="/home" 
+            element={
+              <ProtectedRoute requiredRole="user">
+                <MainPage data={landingPageData} />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin rozhranie - len pre adminov */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Ostatné chránené cesty */}
+          <Route 
+            path="/reservations" 
+            element={
+              <ProtectedRoute>
+                <ReservationSystem data={landingPageData.ReservationSystem} />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/quick-help" 
+            element={
+              <ProtectedRoute>
+                <QuickHelp data={landingPageData.QuickHelp} />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/expert" 
+            element={
+              <ProtectedRoute>
+                <Expert data={landingPageData.expert} />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/news" 
+            element={
+              <ProtectedRoute>
+                <MainPage data={landingPageData} />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 

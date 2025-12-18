@@ -1,7 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export const NavigationMain = () => {
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <nav id="menu" className="navbar navbar-default navbar-fixed-top">
       <div className="container">
@@ -17,7 +26,7 @@ export const NavigationMain = () => {
             <span className="icon-bar"></span>
             <span className="icon-bar"></span>
           </button>
-          <a className="navbar-brand page-scroll" href="#page-top">
+          <a className="navbar-brand page-scroll" href="#page-top" style={{whiteSpace: 'nowrap'}}>
             E-psycholog
           </a>
         </div>
@@ -62,10 +71,20 @@ export const NavigationMain = () => {
                 Kontakt
               </a>
             </li>
+            {user?.role === 'admin' && (
+              <li>
+                <Link to="/admin" className="page-scroll">
+                  Admin Panel
+                </Link>
+              </li>
+            )}
             <li>
-              <Link to="/" className="page-scroll">
-                Odhlásenie
-              </Link>
+              <a onClick={handleLogout} className="page-scroll logout-link" style={{cursor: 'pointer'}}>
+                Odhlásiť sa
+              </a>
+            </li>
+            <li>
+              <span className="user-name" style={{position: 'relative', top: '4px'}}>👤 {user?.name}</span>
             </li>
           </ul>
         </div>
