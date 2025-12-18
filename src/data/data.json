@@ -1,0 +1,266 @@
+{
+"Header": {
+  "title": "Vitajte na stránke školského psychológa",
+  "paragraph": "Potrebujete poradiť, porozprávať sa alebo len nájsť podporu? Som tu pre vás – študentov, rodičov aj učiteľov."
+},
+
+"HeaderMain": {
+  "title": "Vitajte na stránke školského psychológa",
+  "paragraph": "Potrebujete poradiť, porozprávať sa alebo len nájsť podporu? Som tu pre vás – študentov, rodičov aj učiteľov."
+},
+
+
+  "About": {
+    "paragraph": "Naša aplikácia vznikla s cieľom podporiť školských psychológov pri ich náročnej práci so študentami a mladými ľuďmi. Veríme, že moderné technológie môžu zjednodušiť prácu, sprístupniť cenné informácie a zlepšiť komunikáciu medzi psychológom, študentami a ich rodičmi. Naším poslaním je vytvoriť bezpečné a užívateľsky prívetivé prostredie, ktoré pomáha riešiť emocionálne a psychické výzvy mladých ľudí.",
+  "Why": [
+    "Jednoduchá správa údajov",
+    "Lepšia komunikácia",
+    "Sledovanie pokroku",
+    "Dostupná podpora"
+  ],
+  "Why2": [
+    "Prevencia problémov",
+    "Ochrana súkromia",
+    "Jednoduché plánovanie stretnutí",
+    "Zlepšenie pohody študentov"
+  ]
+},
+  "Gallery": [
+    {
+      "title": "Sedenie so študentom",
+      "largeImage": "img/portfolio/01-large.jpg",
+      "smallImage": "img/portfolio/01-small.jpg"
+    },
+    {
+      "title": "Sociálne siete",
+      "largeImage": "img/portfolio/02-large.jpg",
+      "smallImage": "img/portfolio/02-small.jpg"
+    },
+    {
+      "title": "Sedenie so študentom",
+      "largeImage": "img/portfolio/03-large.jpg",
+      "smallImage": "img/portfolio/03-small.jpg"
+    },
+    {
+      "title": "Sedenie so študentom",
+      "largeImage": "img/portfolio/04-large.jpg",
+      "smallImage": "img/portfolio/04-small.jpg"
+    },
+    {
+      "title": "Schránka dôvery",
+      "largeImage": "img/portfolio/schranka-dovery.png",
+      "smallImage": "img/portfolio/schranka-dovery.png"
+    },
+    {
+      "title": "Živý chat",
+      "largeImage": "img/portfolio/zivy-chat.png",
+      "smallImage": "img/portfolio/zivy-chat.png"
+    },
+    {
+      "title": "Expertný systém",
+      "largeImage": "img/portfolio/expertny-system.png",
+      "smallImage": "img/portfolio/expertny-system.png"
+    },
+    {
+      "title": "Pridanie príspevku do schránky dôvery",
+      "largeImage": "img/portfolio/pridanie-prispevku-do-schranky.png",
+      "smallImage": "img/portfolio/pridanie-prispevku-do-schranky.png"
+    },
+    {
+      "title": "Rezervácia sedení",
+      "largeImage": "img/portfolio/rezervacia-sedeni.png",
+      "smallImage": "img/portfolio/rezervacia-sedeni.png"
+    }
+  ],
+"Services": [
+  {
+    "icon": "fa fa-comments",
+    "name": "Živý chat",
+    "text": "Priama a okamžitá komunikácia s psychológom pre rýchlu pomoc a podporu."
+  },
+  {
+     "icon": "fa fa-cogs",
+    "name": "Expertný systém",
+    "text": "Nasmerovanie študentov formou predpripravených otázok a odpovedí."
+  },
+  {
+    "icon": "fa fa-lock",
+    "name": "Schránka dôvery",
+    "text": "Anonymné miesto na zdieľanie problémov a obáv bez strachu z odhalenia."
+  },
+  {
+    "icon": "fa fa-calendar",
+    "name": "Rezervácia sedení",
+    "text": "Jednoduché plánovanie a rezervovanie psychologických konzultácií online."
+  },
+  {
+    "icon": "fa fa-info-circle",
+    "name": "Prehľad o dianí na škole",
+    "text": "Novinky a udalosti zo školy pre lepší prehľad o tom, čo sa deje."
+  },
+  {
+    "icon": "fa fa-th-large",
+    "name": "Všetko na jednom mieste",
+    "text": "Centralizovaný prístup ku všetkým dôležitým informáciám a nástrojom."
+  }
+],
+  "Testimonials": [
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Keď som cítil, že toho je na mňa priveľa, napísal som do schránky dôvery. Psychologička mi pomohla všetko lepšie pochopiť a zvládnuť.",
+      "name": "Anonymný študent"
+    },
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Myslel som si, že moje problémy nikoho nezaujímajú. Ale odpoveď zo schránky ma fakt povzbudila. Odvtedy sa cítim oveľa lepšie.",
+      "name": "Anonymný študent"
+    },
+    {
+      "img": "img/testimonials/03.jpg",
+      "text": "Bál som sa hovoriť o šikane. Ale cez schránku dôvery to šlo ľahšie. Veci sa začali riešiť, a dnes je v triede pokojnejšie.",
+      "name": "Marek Michna"
+    },
+    {
+      "img": "img/testimonials/04.jpg",
+      "text": "Ďakujem, že ste mi odpovedali tak rýchlo. Vaše slová ma fakt potešili a dodali mi odvahu hovoriť o tom aj doma.",
+      "name": "Denisa Poľná"
+    },
+    {
+      "img": "img/testimonials/05.jpg",
+       "text": "Nepotreboval som riešenie, len niekoho, kto si ma vypočuje. A presne to som cez schránku dôvery dostal. Ďakujem.",
+      "name": "Ján Trebuňa"
+    },
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Nevedela som, ako sa mám porozprávať s rodičmi o svojich pocitoch. Vďaka vašej odpovedi v schránke som našla odvahu. Dnes sa už doma cítim bezpečnejšie.",
+      "name": "Anonymný študent"
+    }
+  ],
+
+
+    "Testimonials2": [
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Keď som cítil, že toho je na mňa priveľa, napísal som do schránky dôvery. Psychologička mi pomohla všetko lepšie pochopiť a zvládnuť.",
+      "name": "Anonymný študent"
+    },
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Myslel som si, že moje problémy nikoho nezaujímajú. Ale odpoveď zo schránky ma fakt povzbudila. Odvtedy sa cítim oveľa lepšie.",
+      "name": "Anonymný študent"
+    },
+    {
+      "img": "img/testimonials/03.jpg",
+      "text": "Bál som sa hovoriť o šikane. Ale cez schránku dôvery to šlo ľahšie. Veci sa začali riešiť, a dnes je v triede pokojnejšie.",
+      "name": "Marek Michna"
+    },
+    {
+      "img": "img/testimonials/04.jpg",
+      "text": "Ďakujem, že ste mi odpovedali tak rýchlo. Vaše slová ma fakt potešili a dodali mi odvahu hovoriť o tom aj doma.",
+      "name": "Denisa Poľná"
+    },
+    {
+      "img": "img/testimonials/05.jpg",
+       "text": "Nepotreboval som riešenie, len niekoho, kto si ma vypočuje. A presne to som cez schránku dôvery dostal. Ďakujem.",
+      "name": "Ján Trebuňa"
+    },
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Nevedela som, ako sa mám porozprávať s rodičmi o svojich pocitoch. Vďaka vašej odpovedi v schránke som našla odvahu. Dnes sa už doma cítim bezpečnejšie.",
+      "name": "Anonymný študent"
+    }
+  ],
+
+
+"News": [
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Keď som cítil, že toho je na mňa priveľa, napísal som do schránky dôvery. Psychologička mi pomohla všetko lepšie pochopiť a zvládnuť.",
+      "name": "Anonymný študent"
+    },
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Myslel som si, že moje problémy nikoho nezaujímajú. Ale odpoveď zo schránky ma fakt povzbudila. Odvtedy sa cítim oveľa lepšie.",
+      "name": "Anonymný študent"
+    },
+    {
+      "img": "img/testimonials/03.jpg",
+      "text": "Bál som sa hovoriť o šikane. Ale cez schránku dôvery to šlo ľahšie. Veci sa začali riešiť, a dnes je v triede pokojnejšie.",
+      "name": "Marek Michna"
+    },
+    {
+      "img": "img/testimonials/04.jpg",
+      "text": "Ďakujem, že ste mi odpovedali tak rýchlo. Vaše slová ma fakt potešili a dodali mi odvahu hovoriť o tom aj doma.",
+      "name": "Denisa Poľná"
+    },
+    {
+      "img": "img/testimonials/05.jpg",
+       "text": "Nepotreboval som riešenie, len niekoho, kto si ma vypočuje. A presne to som cez schránku dôvery dostal. Ďakujem.",
+      "name": "Ján Trebuňa"
+    },
+    {
+      "img": "img/testimonials/anonym.png",
+      "text": "Nevedela som, ako sa mám porozprávať s rodičmi o svojich pocitoch. Vďaka vašej odpovedi v schránke som našla odvahu. Dnes sa už doma cítim bezpečnejšie.",
+      "name": "Anonymný študent"
+    }
+  ],
+
+
+
+
+
+
+  "Team": [
+    {
+      "img": "img/team/01.jpg",
+      "name": "John Doe",
+      "job": "Director"
+    },
+    {
+      "img": "img/team/02.jpg",
+      "name": "Mike Doe",
+      "job": "Senior Designer"
+    },
+    {
+      "img": "img/team/03.jpg",
+      "name": "Jane Doe",
+      "job": "Senior Designer"
+    },
+    {
+      "img": "img/team/04.jpg",
+      "name": "Karen Doe",
+      "job": "Project Manager"
+    }
+  ],
+  "Contact": {
+    "address": "Komenského 44, 040 01 Sever, 040 01 ",
+    "phone": "+421 902 641 578",
+    "email": "zuzova@spseke.sk",
+    "facebook": "fb.com",
+    "twitter": "twitter.com",
+    "youtube": "youtube.com",
+    "spse": "https://www.spseke.sk/skola/"
+  },
+  "Features": [
+    {
+      "icon": "fa fa-comments-o",
+      "title": "Lorem ipsum",
+      "text": "Lorem ipsum dolor sit amet placerat facilisis felis mi in tempus eleifend pellentesque natoque etiam."
+    },
+    {
+      "icon": "fa fa-bullhorn",
+      "title": "Lorem ipsum",
+      "text": "Lorem ipsum dolor sit amet placerat facilisis felis mi in tempus eleifend pellentesque natoque etiam."
+    },
+    {
+      "icon": "fa fa-group",
+      "title": "Lorem ipsum",
+      "text": "Lorem ipsum dolor sit amet placerat facilisis felis mi in tempus eleifend pellentesque natoque etiam."
+    },
+    {
+      "icon": "fa fa-magic",
+      "title": "Lorem ipsum",
+      "text": "Lorem ipsum dolor sit amet placerat facilisis felis mi in tempus eleifend pellentesque natoque etiam."
+    }
+  ]
+}

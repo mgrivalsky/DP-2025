@@ -1,0 +1,109 @@
+.reservation-system {
+  max-width: 100%;
+  margin: 0 auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+  color: #0d1b2a;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.reservation-container {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.calendar {
+  flex: 1 1 400px;
+}
+
+.times {
+  flex: 1 1 300px;
+}
+
+.time-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.time-buttons button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #e6f0ff; /* svetlomodrá */
+  color: #0d1b2a;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.time-buttons button.selected {
+  background-color: #163280; /* tmavšia modrá */
+  color: white;
+}
+
+.time-buttons button:hover {
+  background-color: #3b82f6;
+}
+
+.reserve-btn {
+  margin-top: 20px;
+  padding: 14px 28px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.reserve-btn:hover {
+  background-color: #163280;
+}
+
+/* react-calendar úpravy */
+.react-calendar {
+  width: 100%;
+  max-width: 100%;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  background-color: #f0f7ff; /* svetlomodré pozadie */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.available-day {
+  background-color: #3b82f6 !important; /* jemná modrá */
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.selected-day {
+  background-color: #163280 !important; 
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+}
+
+.react-calendar__tile:disabled {
+  color: #999;
+  background-color: #f5f5f5;
+  cursor: default;
+}
+
+.selected-info {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #1976d2;
+}
