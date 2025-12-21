@@ -398,29 +398,10 @@ const FLOW = {
   },
 };
 
-const STORAGE_KEY = "expert_state_v2";
-
 export default function Expert() {
   const [currentId, setCurrentId] = useState("root");
   const [history, setHistory] = useState([]);
   const node = useMemo(() => FLOW[currentId], [currentId]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed?.currentId && FLOW[parsed.currentId]) {
-          setCurrentId(parsed.currentId);
-          setHistory(parsed.history || []);
-        }
-      } catch {}
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentId, history }));
-  }, [currentId, history]);
 
   const goNext = (nextId) => {
     setHistory((h) => [...h, currentId]);
@@ -440,56 +421,242 @@ export default function Expert() {
   const reset = () => {
     setCurrentId("root");
     setHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
-    <section id="expert" className="expert-system">
-      <div className="expert-box">
-        <header className="expert-header">
-          <div className="expert-status">
-            <div className="status-dot"></div>
-            <span>Virtuálny sprievodca</span>
-          </div>
-        </header>
-
-        <div className="expert-body">
-          <h3>{node.title}</h3>
-          <p className="expert-text">{node.text}</p>
-
-          {node.type === "question" && (
-            <div className="expert-options">
-              {node.options.map((opt, i) => (
-                <button key={i} onClick={() => goNext(opt.next)}>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {node.type === "result" && (
-            <div className="expert-result">
-              <h4>{node.title}</h4>
-              <ul>
-                {node.recommendations.map((r, i) => (
-                  <li key={i}>{r}</li>
-                ))}
-              </ul>
-              <p className="expert-warning">
-                Ak sa cítiš v ohrození, volaj <strong>112</strong> alebo kontaktuj{" "}
-                <strong>Linku Nezábudka (0800 800 566)</strong>.
-              </p>
-            </div>
-          )}
+    <section id="expert" className="expert-system" style={{ 
+      padding: "60px 20px", 
+      background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecf1 100%)",
+      minHeight: "100vh"
+    }}>
+      <div className="container" style={{ maxWidth: "700px" }}>
+        <div style={{ textAlign: "center", marginBottom: "50px" }}>
+          <h2 style={{ fontSize: "2.8em", color: "#2c3e50", fontWeight: "700", marginBottom: "10px" }}>
+            🧭 Tvoj Expertný Poradca
+          </h2>
+          <p style={{ fontSize: "1.1em", color: "#555", lineHeight: "1.6" }}>
+            Postupuj krok za krokom a nájdi odpovede, ktoré potrebuješ
+          </p>
         </div>
 
-        <footer className="expert-footer">
-          <button onClick={reset}>Začať odznova</button>
-          <button onClick={goBack} disabled={history.length === 0}>
-            Späť
-          </button>
-        </footer>
+        <div style={{
+          background: "white",
+          borderRadius: "20px",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+          overflow: "hidden",
+          animation: "slideUp 0.5s ease-out"
+        }}>
+          {/* Header s progress indikátorom */}
+          <div style={{
+            background: "linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%)",
+            padding: "30px",
+            color: "white",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "1.2em", opacity: 0.9, marginBottom: "10px", color: "white", fontWeight: "600" }}>
+              {history.length > 0 && `Krok ${history.length + 1}`}
+              {history.length === 0 && "Úvod"}
+            </div>
+            <h3 style={{ fontSize: "1.8em", margin: "0", fontWeight: "600", color: "white" }}>
+              {node.title}
+            </h3>
+          </div>
+
+          <div style={{ padding: "40px 30px" }}>
+            <p style={{ 
+              fontSize: "1.1em", 
+              color: "#555", 
+              lineHeight: "1.8",
+              marginBottom: "30px",
+              textAlign: "center"
+            }}>
+              {node.text}
+            </p>
+
+            {node.type === "question" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {node.options.map((opt, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => goNext(opt.next)}
+                    className="expert-option-btn"
+                    style={{
+                      padding: "16px 20px",
+                      fontSize: "1em",
+                      border: "2px solid #5e72e4",
+                      borderRadius: "12px",
+                      background: "white",
+                      cursor: "pointer",
+                      color: "#2c3e50",
+                      fontWeight: "500",
+                      transition: "all 0.3s ease",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ display: "block", marginBottom: "4px" }}>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {node.type === "result" && (
+              <div style={{
+                background: "linear-gradient(135deg, #f8f9fa 0%, #f1f3f8 100%)",
+                padding: "30px",
+                borderRadius: "16px",
+                border: "2px solid #e9ecf1"
+              }}>
+                <h4 style={{ 
+                  fontSize: "1.5em", 
+                  color: "#2c3e50", 
+                  marginBottom: "20px",
+                  fontWeight: "600"
+                }}>
+                  💡 {node.title}
+                </h4>
+                <ul style={{ 
+                  listStyle: "none", 
+                  padding: "0",
+                  margin: "0 0 25px 0"
+                }}>
+                  {node.recommendations.map((r, i) => (
+                    <li key={i} style={{
+                      padding: "12px 0 12px 30px",
+                      position: "relative",
+                      lineHeight: "1.6",
+                      color: "#555",
+                      fontSize: "1em",
+                      borderBottom: i < node.recommendations.length - 1 ? "1px solid #dae3ef" : "none"
+                    }}>
+                      <span style={{
+                        position: "absolute",
+                        left: "0",
+                        color: "#5e72e4",
+                        fontWeight: "bold"
+                      }}>✓</span>
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+                <div style={{
+                  background: "white",
+                  padding: "20px",
+                  borderRadius: "12px",
+                  border: "2px solid #fff3cd",
+                  marginTop: "25px"
+                }}>
+                  <p style={{ 
+                    margin: "0",
+                    fontSize: "0.95em",
+                    lineHeight: "1.7",
+                    color: "#333"
+                  }}>
+                    <span style={{ fontSize: "1.3em", marginRight: "10px" }}>⚠️</span>
+                    <strong>Ak sa cítiš v ohrození, volaj:</strong> <br/>
+                    <span style={{ color: "#dc3545", fontWeight: "bold", fontSize: "1.1em" }}>112</span> (Záchranná linka) | 
+                    <span style={{ color: "#5e72e4", fontWeight: "bold", marginLeft: "10px" }}>0800 800 566</span> (Linka Nezábudka)
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer s tlačidlami */}
+          <div style={{
+            display: "flex",
+            gap: "12px",
+            padding: "20px 30px",
+            borderTop: "1px solid #e9ecf1",
+            justifyContent: "flex-end"
+          }}>
+            <button 
+              onClick={goBack}
+              disabled={history.length === 0}
+              style={{
+                padding: "12px 24px",
+                fontSize: "0.95em",
+                border: "2px solid #e0e6f0",
+                borderRadius: "10px",
+                background: "white",
+                cursor: history.length === 0 ? "not-allowed" : "pointer",
+                color: history.length === 0 ? "#ccc" : "#2c3e50",
+                fontWeight: "500",
+                transition: "all 0.3s ease",
+                opacity: history.length === 0 ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (history.length > 0) {
+                  e.target.style.background = "#f0f3ff";
+                  e.target.style.borderColor = "#5e72e4";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "white";
+                e.target.style.borderColor = "#e0e6f0";
+              }}
+            >
+              ← Späť
+            </button>
+            <button 
+              onClick={reset}
+              style={{
+                padding: "12px 24px",
+                fontSize: "0.95em",
+                border: "none",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%)",
+                color: "white",
+                cursor: "pointer",
+                fontWeight: "500",
+                transition: "all 0.3s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 6px 16px rgba(94, 114, 228, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "none";
+              }}
+            >
+              🔄 Začať odznova
+            </button>
+          </div>
+        </div>
       </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .expert-system {
+          font-family: inherit;
+        }
+
+        .expert-option-btn {
+          transition: all 0.3s ease !important;
+        }
+
+        .expert-option-btn:hover {
+          border-color: #3d5fd3 !important;
+          background: linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%) !important;
+          color: white !important;
+          transform: translateX(8px) !important;
+          box-shadow: 0 4px 12px rgba(94, 114, 228, 0.3) !important;
+        }
+
+        .expert-option-btn:active {
+          transform: translateX(6px) !important;
+        }
+      `}</style>
     </section>
   );
 }

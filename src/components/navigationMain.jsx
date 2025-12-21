@@ -1,10 +1,29 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export const NavigationMain = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const scrollToId = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleSectionClick = (id) => (e) => {
+    e.preventDefault();
+    if (location.pathname !== "/home") {
+      navigate(`/home#${id}`);
+      setTimeout(() => scrollToId(id), 100);
+    } else {
+      scrollToId(id);
+      window.history.replaceState(null, "", `/home#${id}`);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -37,37 +56,32 @@ export const NavigationMain = () => {
         >
           <ul className="nav navbar-nav navbar-right">
             <li>
-              <a href="#news" className="page-scroll">
+              <a href="/home#news" onClick={handleSectionClick("news")} className="page-scroll">
                 Čo je nové
               </a>
             </li>
             <li>
-              <a href="#testimonials2" className="page-scroll">
+              <a href="/home#testimonials2" onClick={handleSectionClick("testimonials2")} className="page-scroll">
                 Schránka dôvery
               </a>
             </li>
             <li>
-              <a href="#QuickHelp" className="page-scroll">
+              <a href="/home#quickhelp" onClick={handleSectionClick("quickhelp")} className="page-scroll">
                 Rýchla pomoc
               </a>
             </li>
-
-
             <li>
-              <a href="#ReservationSystem" className="page-scroll">
+              <a href="/home#ReservationSystem" onClick={handleSectionClick("ReservationSystem")} className="page-scroll">
                 Rezervácia sedení
               </a>
             </li>
-
-
-              <li>
-              <a href="#Expert" className="page-scroll">
+            <li>
+              <a href="/home#expert" onClick={handleSectionClick("expert")} className="page-scroll">
                 Expertný systém
               </a>
             </li>
-
             <li>
-              <a href="#contact" className="page-scroll">
+              <a href="/home#contact" onClick={handleSectionClick("contact")} className="page-scroll">
                 Kontakt
               </a>
             </li>
@@ -84,7 +98,25 @@ export const NavigationMain = () => {
               </a>
             </li>
             <li>
-              <span className="user-name" style={{position: 'relative', top: '4px'}}>👤 {user?.name}</span>
+              <Link
+                to="/history"
+                className="page-scroll"
+                style={{
+                  position: 'relative',
+                  top: '0px',
+                  color: '#fff',
+                  background: '#608dfd',
+                  borderRadius: '999px',
+                  padding: '8px 12px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'inline-block'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                onFocus={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+              >
+                👤 {user?.name}
+              </Link>
             </li>
           </ul>
         </div>

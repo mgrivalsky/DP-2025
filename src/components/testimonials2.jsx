@@ -72,8 +72,10 @@ export const Testimonials2 = (props) => {
     <div id="testimonials2">
       <div className="container">
         <div className="section-title text-center">
-          <h2 style={{ marginTop: "110px" }}>Schránka dôvery</h2>
-          <p>
+          <h2 style={{ marginTop: "110px", fontSize: "2.8em", color: "#2c3e50", fontWeight: "700" }}>
+            💭 Schránka dôvery
+          </h2>
+          <p style={{ fontSize: "1.1em", color: "#555", lineHeight: "1.8", maxWidth: "700px", margin: "20px auto" }}>
             Schránka dôvery je priestor, kde môžu naši študenti, rodičia aj
             zamestnanci anonymne alebo verejne vyjadriť svoje postrehy, pocity,
             návrhy či obavy. Veríme, že otvorená komunikácia je základom
@@ -85,17 +87,19 @@ export const Testimonials2 = (props) => {
         </div>
 
         {/* Formulár na odoslanie správy */}
-        <div className="trust-box-form">
-          <h3>Pridať novú správu</h3>
+        <div className="trust-box-form" style={{ background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecf1 100%)", padding: "40px", borderRadius: "16px", boxShadow: "0 4px 15px rgba(0,0,0,0.08)" }}>
+          <h3 style={{ fontSize: "1.8em", color: "#2c3e50", marginBottom: "25px", fontWeight: "600" }}>✍️ Podeľ sa s nami</h3>
           {submitStatus && (
             <div
               style={{
-                padding: "10px",
-                borderRadius: "6px",
-                marginBottom: "12px",
+                padding: "16px",
+                borderRadius: "10px",
+                marginBottom: "20px",
                 background: submitStatus.type === "success" ? "#d4edda" : "#f8d7da",
                 color: submitStatus.type === "success" ? "#155724" : "#721c24",
-                border: submitStatus.type === "success" ? "1px solid #c3e6cb" : "1px solid #f5c6cb",
+                border: submitStatus.type === "success" ? "2px solid #28a745" : "2px solid #dc3545",
+                fontWeight: "500",
+                fontSize: "1em",
               }}
             >
               {submitStatus.message}
@@ -104,32 +108,47 @@ export const Testimonials2 = (props) => {
 
           <form onSubmit={handleSubmit}>
 
-            <div className="form-group mb-3">
-              <label>Kategória problému</label>
+            <div className="form-group mb-4">
+              <label style={{ fontWeight: "600", fontSize: "1.05em", color: "#2c3e50", display: "block", marginBottom: "10px" }}>
+                📌 Kategória problému
+              </label>
               <select
-                className="form-control"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
+                style={{ 
+                  padding: "12px 16px", 
+                  fontSize: "1.05em", 
+                  borderRadius: "8px", 
+                  border: "2px solid #e0e6f0", 
+                  cursor: "pointer", 
+                  backgroundColor: "#fff",
+                  color: "#000",
+                  width: "100%",
+                  fontFamily: "inherit"
+                }}
               >
                 <option value="">-- Vyberte tému --</option>
-                <option value="Štúdium">Štúdium</option>
-                <option value="Vzťahy">Vzťahy</option>
-                <option value="Šikana">Šikana</option>
-                <option value="Psychická pohoda">Psychická pohoda</option>
-                <option value="Iné">Iné</option>
+                <option value="Štúdium">📚 Štúdium</option>
+                <option value="Vzťahy">💙 Vzťahy</option>
+                <option value="Šikana">⚠️ Šikana</option>
+                <option value="Psychická pohoda">🧠 Psychická pohoda</option>
+                <option value="Iné">✨ Iné</option>
               </select>
             </div>
 
-            <div className="form-group mb-3">
-              <label>Vaša správa</label>
+            <div className="form-group mb-4">
+              <label style={{ fontWeight: "600", fontSize: "1.05em", color: "#2c3e50", display: "block", marginBottom: "10px" }}>
+                💬 Tvoja správa
+              </label>
               <textarea
                 className="form-control"
                 rows="6"
-                placeholder="Napíšte svoju správu..."
+                placeholder="Napíšte, čo vás trápi alebo čo chcete zdieľať. Nikto vás nebude súdiť."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 required
+                style={{ padding: "14px", fontSize: "1em", borderRadius: "8px", border: "2px solid #e0e6f0", fontFamily: "inherit", minHeight: "150px", transition: "all 0.3s" }}
               />
             </div>
 
@@ -137,69 +156,129 @@ export const Testimonials2 = (props) => {
 
             <div
               style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "12px",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-                marginTop: "-10px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
                 marginBottom: "40px",
               }}
             >
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <label
-                  className="form-check d-flex align-items-center mb-0"
-                  style={{ padding: "10px 12px", border: "1px solid #e0e0e0", borderRadius: "10px", background: "#f9fafb" }}
-                >
-                  <input
-                    type="checkbox"
-                    className="form-check-input me-2"
-                    id="anonCheck"
-                    checked={isAnonymous}
-                    onChange={() => setIsAnonymous(!isAnonymous)}
-                    style={{ marginTop: 0 }}
-                  />
-                  <span style={{ fontWeight: 600, color: "#333" }}> Odoslať anonymne</span>
-                </label>
-
-                <label
-                  className="form-check d-flex align-items-center mb-0"
-                  style={{ padding: "10px 12px", border: "1px solid #e0e0e0", borderRadius: "10px", background: "#f9fafb" }}
-                >
-                  <input
-                    type="checkbox"
-                    className="form-check-input me-2"
-                    id="publishCheck"
-                    checked={isPublishable}
-                    onChange={() => setIsPublishable(!isPublishable)}
-                    style={{ marginTop: 0 }}
-                  />
-                  <span style={{ fontWeight: 600, color: "#333" }}> Môže byť publikované</span>
+              {/* Odoslať anonymne */}
+              <div
+                style={{
+                  padding: "16px",
+                  border: "2px solid",
+                  borderColor: isAnonymous ? "#5e72e4" : "#dae3ef",
+                  borderRadius: "12px",
+                  background: isAnonymous ? "#f0f3ff" : "#fafbfc",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px"
+                }}
+                onClick={() => setIsAnonymous(!isAnonymous)}
+              >
+                <input
+                  type="checkbox"
+                  id="anonCheck"
+                  checked={isAnonymous}
+                  onChange={() => {}}
+                  style={{ 
+                    width: "24px", 
+                    height: "24px", 
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    accentColor: "#5e72e4"
+                  }}
+                />
+                <label style={{ cursor: "pointer", marginBottom: 0, flex: 1 }}>
+                  <span style={{ fontWeight: "600", color: "#2c3e50", fontSize: "0.95em" }}>🔒 Anonymne</span>
                 </label>
               </div>
 
+              {/* Môže byť publikované */}
+              <div
+                style={{
+                  padding: "16px",
+                  border: "2px solid",
+                  borderColor: isPublishable ? "#5e72e4" : "#dae3ef",
+                  borderRadius: "12px",
+                  background: isPublishable ? "#f0f3ff" : "#fafbfc",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px"
+                }}
+                onClick={() => setIsPublishable(!isPublishable)}
+              >
+                <input
+                  type="checkbox"
+                  id="publishCheck"
+                  checked={isPublishable}
+                  onChange={() => {}}
+                  style={{ 
+                    width: "24px", 
+                    height: "24px", 
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    accentColor: "#5e72e4"
+                  }}
+                />
+                <label style={{ cursor: "pointer", marginBottom: 0, flex: 1 }}>
+                  <span style={{ fontWeight: "600", color: "#2c3e50", fontSize: "0.95em" }}>📢 Zverejniteľné</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              {/* Odosielací button */}
               <button
                 type="submit"
-                className="btn btn-primary px-4 rounded-pill"
+                className="btn btn-primary px-5 rounded-pill"
                 disabled={isSubmitting}
-                style={{ minWidth: "180px", fontWeight: 700 }}
+                style={{
+                  minWidth: "220px",
+                  fontWeight: "700",
+                  alignSelf: "flex-start",
+                  fontSize: "1.1em",
+                  padding: "14px 40px",
+                  background: "linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%)",
+                  border: "none",
+                  boxShadow: "0 4px 12px rgba(94, 114, 228, 0.3)",
+                  transition: "all 0.3s",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 6px 16px rgba(94, 114, 228, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "0 4px 12px rgba(94, 114, 228, 0.3)";
+                }}
               >
-                {isSubmitting ? "Odosielam..." : "Odoslať novú správu"}
+                {isSubmitting ? "⏳ Odosielam..." : "Odoslať správu"}
               </button>
             </div>
 
+            <div style={{ marginTop: "20px", padding: "16px", backgroundColor: "#f8f9fa", borderRadius: "10px", fontSize: "0.95em", color: "#555", lineHeight: "1.6" }}>
+              <p style={{ marginBottom: "10px" }}>
+                <strong>💡 Ako to funguje:</strong>
+              </p>
+              <ul style={{ marginBottom: "0", paddingLeft: "20px" }}>
+                <li><strong>🔒 Anonymne</strong> – Tvoja správa bude odoslaná bez tvojho mena a priezviska</li>
+                <li><strong>📢 Zverejniteľné</strong> – Tvoj príspevok možno zverejníme na našich stránkach (bez mena priezviska, ak je anonymný)</li>
+              </ul>
+            </div>
 
           </form>
         </div>
 
-        <hr />
-
-        {/* Zobrazenie pridaných správ */}
-        <h3 className="text-secondary" style={{ marginBottom: "20px" }}>
-          📬 Správy zo schránky dôvery:
-        </h3>
-        <div className="row">
+        <div style={{ marginTop: "60px", paddingTop: "40px", borderTop: "3px solid #e9ecf1" }}>
+          <h3 className="text-secondary" style={{ marginBottom: "30px", fontSize: "1.8em", color: "#2c3e50", fontWeight: "600" }}>
+            📬 Inšpirácia od našich študentov:
+          </h3>
+          <div className="row">
           {props.data &&
             props.data.map((d, i) => (
               <div key={`${d.name}-${i}`} className="col-md-4">
@@ -235,6 +314,7 @@ export const Testimonials2 = (props) => {
         poskytnuté so súhlasom autorov. Ďakujeme všetkým, ktorí sa rozhodli
         podeliť o svoj názor, skúsenosť alebo podnet.
       </small>
+        </div>
       </div>
     </div>
   );

@@ -36,6 +36,40 @@ export const AdminDashboard = () => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [reservationFilter, setReservationFilter] = useState('pending');
+  const [newReservationForm, setNewReservationForm] = useState({
+    email: '',
+    datum: '',
+    cas_od: '',
+    cas_do: '',
+    poznamka: '',
+    stav: 'pending'
+  });
+  const [showNewReservationForm, setShowNewReservationForm] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    message: '',
+    confirmText: 'Potvrdiť',
+    cancelText: 'Zrušiť',
+    confirmStyle: {},
+    onConfirm: null
+  });
+
+  const showConfirm = (options) => {
+    setConfirmDialog({
+      open: true,
+      title: options.title || 'Potvrdenie',
+      message: options.message || '',
+      confirmText: options.confirmText || 'Potvrdiť',
+      cancelText: options.cancelText || 'Zrušiť',
+      confirmStyle: options.confirmStyle || {},
+      onConfirm: options.onConfirm || null
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+  };
 
   const handleLogout = () => {
     logout();
@@ -181,8 +215,7 @@ export const AdminDashboard = () => {
     }
   };
 
-  const removeSlot = async (id) => {
-    if (!window.confirm('Zmazať tento slot?')) return;
+  const performRemoveSlot = async (id) => {
     try {
       const resp = await fetch(`${API_BASE}/api/cas-slots/${id}`, { method: 'DELETE' });
       if (!resp.ok) {
@@ -198,8 +231,18 @@ export const AdminDashboard = () => {
     }
   };
 
-  const truncateSlots = async () => {
-    if (!window.confirm('Naozaj zmazať všetky sloty?')) return;
+  const removeSlot = (id) => {
+    showConfirm({
+      title: 'Potvrdenie vymazania',
+      message: 'Naozaj chcete zmazať tento termín? Táto akcia je nezvratná.',
+      confirmText: 'Vymazať',
+      cancelText: 'Zrušiť',
+      confirmStyle: { background: '#dc3545' },
+      onConfirm: () => { closeConfirm(); performRemoveSlot(id); }
+    });
+  };
+
+  const performTruncateSlots = async () => {
     try {
       await fetch(`${API_BASE}/api/cas-slots`, { method: 'DELETE' });
       setSlots([]);
@@ -208,6 +251,17 @@ export const AdminDashboard = () => {
       console.error(err);
       setSlotMessage('Chyba pri mazaní všetkých slotov');
     }
+  };
+
+  const truncateSlots = () => {
+    showConfirm({
+      title: 'Zmazať všetky termíny',
+      message: 'Naozaj chcete zmazať všetky dostupné termíny? Táto akcia je nezvratná.',
+      confirmText: 'Zmazať všetky',
+      cancelText: 'Zrušiť',
+      confirmStyle: { background: '#dc3545' },
+      onConfirm: () => { closeConfirm(); performTruncateSlots(); }
+    });
   };
 
   const updateReservation = async (id) => {
@@ -231,8 +285,7 @@ export const AdminDashboard = () => {
     }
   };
 
-  const deleteReservation = async (id) => {
-    if (!window.confirm('Zmazať túto rezerváciu?')) return;
+  const performDeleteReservation = async (id) => {
     try {
       const resp = await fetch(`${API_BASE}/api/reservations/${id}`, { method: 'DELETE' });
       const data = await resp.json();
@@ -245,6 +298,63 @@ export const AdminDashboard = () => {
     } catch (err) {
       console.error(err);
       setReservationMessage('Chyba pri mazaní rezervácie');
+    }
+  };
+
+  const deleteReservation = (id) => {
+    showConfirm({
+      title: 'Potvrdenie vymazania',
+      message: 'Naozaj chcete zmazať túto rezerváciu? Táto akcia je nezvratná.',
+      confirmText: 'Vymazať',
+      cancelText: 'Zrušiť',
+      confirmStyle: { background: '#dc3545' },
+      onConfirm: () => { closeConfirm(); performDeleteReservation(id); }
+    });
+  };
+
+  const addNewReservation = async (e) => {
+    e.preventDefault();
+    setReservationMessage('');
+    const { email, datum, cas_od, cas_do, poznamka, stav } = newReservationForm;
+    
+    if (!email || !datum || !cas_od || !cas_do) {
+      setReservationMessage('Vyplňte všetky povinné polia (email, dátum, čas od, čas do).');
+      return;
+    }
+    
+    try {
+      const resp = await fetch(`${API_BASE}/api/reservations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email, 
+          datum, 
+          cas_od, 
+          cas_do, 
+          poznamka, 
+          stav, 
+          id_psychologicky: 1 
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setReservationMessage(`Chyba: ${data?.error || 'neznáma'}`);
+      } else {
+        setReservationMessage('✅ Rezervácia vytvorená');
+        setNewReservationForm({
+          email: '',
+          datum: '',
+          cas_od: '',
+          cas_do: '',
+          poznamka: '',
+          stav: 'pending'
+        });
+        setShowNewReservationForm(false);
+        loadReservations();
+      }
+    } catch (err) {
+      console.error(err);
+      setReservationMessage('Chyba pri vytváraní rezervácie');
     }
   };
 
@@ -263,26 +373,74 @@ export const AdminDashboard = () => {
     { id: 4, user: 'Zuzana Nová', action: 'Pridala príspevok do schránky dôvery', time: 'pred 2 hodinami' }
   ];
 
-  // 3 najbližšie sedenia z databázy
-  const upcomingReservations = reservations
-    .filter(r => r.stav === 'pending' || r.stav === 'potvrdena')
-    .sort((a, b) => {
-      const dateA = new Date(a.datum);
-      const dateB = new Date(b.datum);
-      if (dateA !== dateB) return dateA - dateB;
-      return a.cas_od.localeCompare(b.cas_od);
-    })
-    .slice(0, 3)
-    .map(r => ({
-      id: r.id_sedenia,
-      student: `${r.uzivatel_meno} ${r.uzivatel_priezvisko}`,
-      date: new Date(r.datum).toLocaleDateString('sk-SK', {day:'2-digit', month:'2-digit', year:'numeric'}),
-      timeRange: `${r.cas_od?.slice(0, 5) || ''} - ${r.cas_do?.slice(0, 5) || ''}`,
-      type: r.poznamka || 'Konzultácia'
-    }));
+  // Nadchádzajúce sedenia od dneška (vrátane) zoradené chronologicky
+  const upcomingReservations = (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return reservations
+      .filter(r => (r.stav === 'pending' || r.stav === 'potvrdena') && new Date(r.datum) >= today)
+      .sort((a, b) => {
+        const dateA = new Date(a.datum);
+        const dateB = new Date(b.datum);
+        if (dateA.getTime() !== dateB.getTime()) return dateA - dateB;
+        return (a.cas_od || '').localeCompare(b.cas_od || '');
+      })
+      .map(r => ({
+        id: r.id_sedenia,
+        student: `${r.uzivatel_meno} ${r.uzivatel_priezvisko}`,
+        date: new Date(r.datum).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        timeRange: `${r.cas_od?.slice(0, 5) || ''} - ${r.cas_do?.slice(0, 5) || ''}`,
+        type: r.poznamka || 'Konzultácia'
+      }));
+  })();
 
   return (
     <div className="admin-dashboard-container">
+      {confirmDialog.open && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.45)', zIndex: 1050,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '10px', width: '100%', maxWidth: '460px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)', overflow: 'hidden'
+          }}>
+            <div style={{ padding: '16px 18px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
+              <h3 style={{ margin: 0, fontSize: '18px' }}>{confirmDialog.title}</h3>
+            </div>
+            <div style={{ padding: '18px' }}>
+              <p style={{ margin: 0, color: '#333', lineHeight: 1.5 }}>{confirmDialog.message}</p>
+            </div>
+            <div style={{ padding: '14px 18px', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#f8f9fa' }}>
+              <button
+                onClick={closeConfirm}
+                style={{
+                  padding: '10px 16px', background: '#6c757d', color: 'white', border: 'none',
+                  borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                {confirmDialog.cancelText || 'Zrušiť'}
+              </button>
+              <button
+                onClick={() => {
+                  const fn = confirmDialog.onConfirm;
+                  if (typeof fn === 'function') fn();
+                }}
+                style={{
+                  padding: '10px 16px',
+                  color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
+                  background: (confirmDialog.confirmStyle && confirmDialog.confirmStyle.background) || '#28a745'
+                }}
+              >
+                {confirmDialog.confirmText || 'Potvrdiť'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <nav id="menu" className="navbar navbar-default navbar-fixed-top">
         <div className="container">
           <div className="navbar-header">
@@ -297,7 +455,12 @@ export const AdminDashboard = () => {
               <span className="icon-bar"></span>
               <span className="icon-bar"></span>
             </button>
-            <a className="navbar-brand" style={{whiteSpace: 'nowrap'}}>
+            <a
+              className="navbar-brand"
+              onClick={() => setActiveTab('overview')}
+              style={{ whiteSpace: 'nowrap', cursor: 'pointer' }}
+              aria-label="Prehľad"
+            >
               🧑‍⚕️ Admin Panel
             </a>
           </div>
@@ -458,6 +621,156 @@ export const AdminDashboard = () => {
               </div>
             )}
 
+            {/* Tlačidlo na zobrazenie formulára */}
+            <div style={{ marginBottom: '15px' }}>
+              <button 
+                onClick={() => setShowNewReservationForm(!showNewReservationForm)}
+                style={{
+                  padding: '10px 20px',
+                  background: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                {showNewReservationForm ? '❌ Zrušiť' : '➕ Pridať novú rezerváciu'}
+              </button>
+            </div>
+
+            {/* Formulár na pridanie novej rezervácie */}
+            {showNewReservationForm && (
+              <form onSubmit={addNewReservation} style={{ 
+                marginBottom: '20px', 
+                padding: '20px', 
+                background: '#f8f9fa', 
+                borderRadius: '8px',
+                border: '2px solid #28a745'
+              }}>
+                <h3>Pridať novú rezerváciu</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Email užívateľa *
+                    </label>
+                    <input
+                      type="email"
+                      value={newReservationForm.email}
+                      onChange={(e) => setNewReservationForm({ ...newReservationForm, email: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      placeholder="uzivatel@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Dátum *
+                    </label>
+                    <input
+                      type="date"
+                      value={newReservationForm.datum}
+                      onChange={(e) => setNewReservationForm({ ...newReservationForm, datum: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Čas od *
+                    </label>
+                    <input
+                      type="time"
+                      value={newReservationForm.cas_od}
+                      onChange={(e) => setNewReservationForm({ ...newReservationForm, cas_od: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Čas do *
+                    </label>
+                    <input
+                      type="time"
+                      value={newReservationForm.cas_do}
+                      onChange={(e) => setNewReservationForm({ ...newReservationForm, cas_do: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Stav
+                    </label>
+                    <select
+                      value={newReservationForm.stav}
+                      onChange={(e) => setNewReservationForm({ ...newReservationForm, stav: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                      <option value="pending">Čakajúca</option>
+                      <option value="potvrdena">Potvrdená</option>
+                      <option value="zrusena">Zrušená</option>
+                      <option value="dokoncena">Dokončená</option>
+                    </select>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                      Poznámka
+                    </label>
+                    <textarea
+                      value={newReservationForm.poznamka}
+                      onChange={(e) => setNewReservationForm({ ...newReservationForm, poznamka: e.target.value })}
+                      rows={4}
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ccc', fontFamily: 'inherit' }}
+                      placeholder="Voliteľný popis rezervácie"
+                    />
+                  </div>
+                </div>
+                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="submit"
+                    style={{
+                      padding: '10px 20px',
+                      background: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    💾 Uložiť rezerváciu
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowNewReservationForm(false);
+                      setNewReservationForm({
+                        email: '',
+                        datum: '',
+                        cas_od: '',
+                        cas_do: '',
+                        poznamka: '',
+                        stav: 'pending'
+                      });
+                    }}
+                    style={{
+                      padding: '10px 20px',
+                      background: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Zrušiť
+                  </button>
+                </div>
+              </form>
+            )}
+
             <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
               <label style={{ fontWeight: 'bold' }}>Filtrovať podľa stavu:</label>
               <select 
@@ -485,7 +798,7 @@ export const AdminDashboard = () => {
               <p>Žiadne rezervácie s vybraným stavu</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table>
+                <table style={{ width: '100%' }}>
                   <thead>
                     <tr>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Užívateľ</th>
@@ -494,7 +807,7 @@ export const AdminDashboard = () => {
                       <th style={{ padding: '12px', textAlign: 'left' }}>Čas od</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Čas do</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Stav</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>Popis</th>
+                      <th style={{ padding: '12px', textAlign: 'left', minWidth: '300px' }}>Poznámka</th>
                       <th style={{ padding: '12px', textAlign: 'center' }}>Akcie</th>
                     </tr>
                   </thead>
@@ -541,12 +854,12 @@ export const AdminDashboard = () => {
                                 <option value="dokoncena">Dokončená</option>
                               </select>
                             </td>
-                            <td style={{ padding: '12px' }}>
-                              <input 
-                                type="text" 
-                                value={editForm.poznamka || ''} 
+                            <td style={{ padding: '12px', minWidth: '300px' }}>
+                              <textarea
+                                value={editForm.poznamka || ''}
                                 onChange={e => setEditForm({...editForm, poznamka: e.target.value})}
-                                style={{ width: '100%', padding: '5px' }}
+                                rows={3}
+                                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ccc', fontFamily: 'inherit' }}
                                 placeholder="Popis..."
                               />
                             </td>
@@ -608,7 +921,7 @@ export const AdminDashboard = () => {
                                  res.stav === 'zrusena' ? 'Zrušená' : 'Dokončená'}
                               </span>
                             </td>
-                            <td style={{ padding: '12px' }}>{res.poznamka || '-'}</td>
+                            <td style={{ padding: '12px', minWidth: '300px', wordWrap: 'break-word', whiteSpace: 'normal' }}>{res.poznamka || '-'}</td>
                             <td style={{ padding: '12px', textAlign: 'center' }}>
                               <button 
                                 onClick={() => {
@@ -713,15 +1026,15 @@ export const AdminDashboard = () => {
             </form>
 
             <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Existujúce termíny ({slots.length})</h3>
+              <h3>Existujúce voľné termíny ({slots.filter(s => s.volny).length})</h3>
               <button onClick={truncateSlots} style={{ padding: '8px 16px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
                 Zmazať všetky
               </button>
             </div>
 
             {slotLoading && <p>Načítavam sloty...</p>}
-            {!slotLoading && slots.length === 0 && <p>Zatiaľ žiadne sloty.</p>}
-            {!slotLoading && slots.length > 0 && (
+            {!slotLoading && slots.filter(s => s.volny).length === 0 && <p>Zatiaľ žiadne voľné termíny.</p>}
+            {!slotLoading && slots.filter(s => s.volny).length > 0 && (
               <div style={{ overflowX: 'auto' }}>
                 <table>
                 <thead>
@@ -735,7 +1048,7 @@ export const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {slots.map((slot, idx) => (
+                  {slots.filter(s => s.volny).map((slot, idx) => (
                     <tr key={slot.id_casu}>
                       <td style={{ padding: '10px' }}>{slot.id_casu}</td>
                       <td style={{ padding: '10px' }}>{new Date(slot.datum).toLocaleDateString('sk-SK', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
@@ -816,8 +1129,8 @@ export const AdminDashboard = () => {
                   <tbody>
                     {trustEntries.map(entry => (
                       <tr key={entry.id_prispevku}>
-                        <td style={{ padding: '12px' }}>{entry.kategoria}</td>
-                        <td style={{ padding: '12px', maxWidth: '320px' }}>
+                        <td style={{ padding: '8px' }}>{entry.kategoria}</td>
+                        <td style={{ padding: '8px', maxWidth: '320px' }}>
                           {trustEditId === entry.id_prispevku ? (
                             <textarea
                               value={contentDraft[entry.id_prispevku] ?? entry.obsah_prispevku ?? ''}
@@ -829,7 +1142,7 @@ export const AdminDashboard = () => {
                             <div style={{ whiteSpace: 'pre-line' }}>{entry.obsah_prispevku}</div>
                           )}
                         </td>
-                        <td style={{ padding: '12px' }}>
+                        <td style={{ padding: '8px' }}>
                           {entry.anonymne ? (
                             'Áno'
                           ) : (
@@ -838,9 +1151,9 @@ export const AdminDashboard = () => {
                             </span>
                           )}
                         </td>
-                        <td style={{ padding: '12px' }}>{entry.publikovatelne ? 'Áno' : 'Nie'}</td>
-                        <td style={{ padding: '12px' }}>{entry.stav}</td>
-                        <td style={{ padding: '12px', minWidth: '240px' }}>
+                        <td style={{ padding: '8px' }}>{entry.publikovatelne ? 'Áno' : 'Nie'}</td>
+                        <td style={{ padding: '8px' }}>{entry.stav}</td>
+                        <td style={{ padding: '8px', minWidth: '240px' }}>
                           {trustEditId === entry.id_prispevku ? (
                             <textarea
                               value={answerDraft[entry.id_prispevku] ?? entry.odpoved ?? ''}
@@ -855,36 +1168,36 @@ export const AdminDashboard = () => {
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
                           {trustEditId === entry.id_prispevku ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                               <button
                                 onClick={() => updateTrustAnswer(entry.id_prispevku)}
-                                style={{ padding: '8px 14px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                style={{ padding: '4px 8px', fontSize: '12px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
                               >
                                 Uložiť
                               </button>
                               <button
                                 onClick={() => setTrustEditId(null)}
-                                style={{ padding: '8px 14px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                style={{ padding: '4px 8px', fontSize: '12px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
                               >
                                 Zrušiť
                               </button>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'row', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
                               <button
                                 onClick={() => {
                                   setTrustEditId(entry.id_prispevku);
                                   setContentDraft(prev => ({ ...prev, [entry.id_prispevku]: entry.obsah_prispevku }));
                                   setAnswerDraft(prev => ({ ...prev, [entry.id_prispevku]: entry.odpoved || '' }));
                                 }}
-                                style={{ padding: '8px 14px', background: '#007bff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                style={{ padding: '4px 8px', fontSize: '12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
                               >
                                 Editovať
                               </button>
                               <button
-                                style={{ padding: '8px 14px', background: '#ffc107', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                style={{ padding: '4px 8px', fontSize: '12px', background: '#ffc107', color: '#333', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
                               >
                                 Publikovať
                               </button>

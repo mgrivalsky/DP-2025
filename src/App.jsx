@@ -20,6 +20,7 @@ import Expert from "./components/Expert.js";
 import ChatIconButton from "./components/ChatIconButton";
 import { UserDashboard } from "./components/UserDashboard";
 import { AdminDashboard } from "./components/AdminDashboard";
+import UserHistory from "./components/UserHistory";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -137,6 +138,15 @@ const App = () => {
                 <MainPage data={landingPageData} />
               </ProtectedRoute>
             } 
+          />
+
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute requiredRole="user">
+                <UserHistory />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </Router>
