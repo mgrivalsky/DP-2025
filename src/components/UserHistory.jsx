@@ -37,6 +37,16 @@ export default function UserHistory() {
 		return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("sk-SK");
 	};
 
+	const formatTime = (time) => {
+		if (!time) return "";
+		// If it's in HH:MM:SS format, remove seconds
+		if (typeof time === "string" && time.includes(":")) {
+			const parts = time.split(":");
+			return parts.length > 2 ? `${parts[0]}:${parts[1]}` : time;
+		}
+		return time;
+	};
+
 	const formatStatus = (stav) => {
 		if (!stav) return { label: "Čaká na potvrdenie", tone: "pending" };
 		const lower = String(stav).toLowerCase();
@@ -177,7 +187,7 @@ export default function UserHistory() {
 													<div style={{ display: "flex", gap: "10px", color: "#4d5b7c", fontSize: "0.95em" }}>
 														<span>{formatDate(s.datum)}</span>
 														<span>•</span>
-														<span>{s.cas_od || ""}{s.cas_do ? ` - ${s.cas_do}` : ""}</span>
+														<span>{formatTime(s.cas_od)}{s.cas_do ? ` - ${formatTime(s.cas_do)}` : ""}</span>
 													</div>
 												</div>
 												<div style={{ textAlign: "right" }}>

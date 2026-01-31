@@ -78,7 +78,7 @@ Server bude bežať na `http://localhost:5000`
 Prihlásenie používateľa
 ```json
 {
-  "email": "psycholog@skolka.sk",
+  "email": "zuzova@spseke.sk",
   "password": "admin123"
 }
 ```
@@ -132,7 +132,7 @@ Aktualizovať status rezervácie (iba admin)
 
 ## Testovacie účty
 
-- **Admin**: psycholog@skolka.sk / admin123
+- **Admin**: zuzova@spseke.sk / admin123
 - **Učiteľ**: ucitel@skolka.sk / user123
 - **Žiak**: ziak@skolka.sk / user123
 

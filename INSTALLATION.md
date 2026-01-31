@@ -86,7 +86,7 @@ Frontend bude bežať na: http://localhost:3000
 ## 7. Testovanie
 
 Prihlasovacie údaje:
-- **Psychológ (Admin)**: psycholog@skolka.sk / admin123
+- **Psychológ (Admin)**: zuzova@spseke.sk / admin123
 - **Učiteľ**: ucitel@skolka.sk / user123
 - **Žiak**: ziak@skolka.sk / user123
 

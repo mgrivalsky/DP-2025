@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../database/db');
 
+// Ensure publish column exists (safe for existing DBs)
+pool.query(
+  `ALTER TABLE Schranka_dovery
+   ADD COLUMN IF NOT EXISTS zverejnene BOOLEAN DEFAULT false`
+).catch((err) => {
+  console.error('Error ensuring zverejnene column:', err);
+});
+
 // Submit a trust box message
 router.post('/', async (req, res) => {
   try {
@@ -20,7 +28,7 @@ router.post('/', async (req, res) => {
     const insert = await pool.query(
       `INSERT INTO Schranka_dovery (kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologicky)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, stav, id_uzivatela, id_psychologicky` ,
+       RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, stav, id_uzivatela, id_psychologicky, datum_pridania` ,
       [kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologicky]
     );
 
@@ -35,8 +43,8 @@ router.post('/', async (req, res) => {
 router.get('/', async (_req, res) => {
   try {
         const result = await pool.query(
-       `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.odpoved, sd.stav,
-            sd.id_uzivatela, sd.id_psychologicky,
+          `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.odpoved, sd.stav,
+            sd.id_uzivatela, sd.id_psychologicky, sd.datum_pridania,
             CONCAT(u.meno, ' ', u.priezvisko) AS uzivatel_meno
           FROM Schranka_dovery sd
           LEFT JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
@@ -63,7 +71,7 @@ router.patch('/:id', async (req, res) => {
               stav = 'vyriesene',
               id_psychologicky = $4
         WHERE id_prispevku = $3
-        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, odpoved, stav, id_uzivatela, id_psychologicky`,
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
       [odpoved ?? '', obsah_prispevku ?? null, id, id_psychologicky]
     );
 
@@ -75,6 +83,74 @@ router.patch('/:id', async (req, res) => {
   } catch (err) {
     console.error('Error updating trust box message:', err);
     return res.status(500).json({ error: 'Chyba servera pri ukladaní odpovede' });
+  }
+});
+
+// Publish a trust box message (only if user allowed publishing)
+router.patch('/:id/publish', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const update = await pool.query(
+      `UPDATE Schranka_dovery
+          SET zverejnene = true
+        WHERE id_prispevku = $1 AND publikovatelne = true
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+      [id]
+    );
+
+    if (update.rowCount === 0) {
+      return res.status(400).json({ error: 'Príspevok nie je publikovateľný alebo neexistuje' });
+    }
+
+    return res.json(update.rows[0]);
+  } catch (err) {
+    console.error('Error publishing trust box message:', err);
+    return res.status(500).json({ error: 'Chyba servera pri publikovaní' });
+  }
+});
+
+// Unpublish a trust box message (keep in DB)
+router.patch('/:id/unpublish', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const update = await pool.query(
+      `UPDATE Schranka_dovery
+          SET zverejnene = false
+        WHERE id_prispevku = $1
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+      [id]
+    );
+
+    if (update.rowCount === 0) {
+      return res.status(404).json({ error: 'Správa nenájdená' });
+    }
+
+    return res.json(update.rows[0]);
+  } catch (err) {
+    console.error('Error unpublishing trust box message:', err);
+    return res.status(500).json({ error: 'Chyba servera pri zrušení publikovania' });
+  }
+});
+
+// Get published trust box messages (public)
+router.get('/published', async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene,
+              sd.odpoved, sd.datum_pridania,
+              CONCAT(u.meno, ' ', u.priezvisko) AS uzivatel_meno
+       FROM Schranka_dovery sd
+       LEFT JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
+       WHERE sd.zverejnene = true AND sd.publikovatelne = true
+       ORDER BY sd.datum_pridania DESC`
+    );
+
+    return res.json(result.rows || []);
+  } catch (err) {
+    console.error('Error fetching published trust box messages:', err);
+    return res.status(500).json({ error: 'Chyba servera pri načítaní publikovaných správ' });
   }
 });
 

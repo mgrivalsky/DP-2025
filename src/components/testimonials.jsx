@@ -1,6 +1,31 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 export const Testimonials = (props) => {
+  const [publishedMessages, setPublishedMessages] = useState([]);
+  const [publishedLoading, setPublishedLoading] = useState(false);
+
+  const loadPublishedMessages = async () => {
+    try {
+      setPublishedLoading(true);
+      const resp = await fetch(`${API_BASE}/api/trust-box/published`);
+      const data = await resp.json();
+      if (!resp.ok) {
+        return;
+      }
+      setPublishedMessages(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPublishedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPublishedMessages();
+  }, []);
+
   return (
     <div id="testimonials">
       <div className="container">
@@ -27,6 +52,29 @@ export const Testimonials = (props) => {
                 </div>
               ))
             : "loading"}
+
+          {publishedLoading && (
+            <div className="col-md-12">
+              <p>Načítavam publikované príspevky...</p>
+            </div>
+          )}
+
+          {publishedMessages.map((m, i) => (
+            <div key={`published-${m.id_prispevku || i}`} className="col-md-4">
+              <div className="testimonial">
+                <div className="testimonial-image">
+                  <img src="/img/testimonials/anonym.png" alt="Profil bez fotky" />
+                </div>
+                <div className="testimonial-content">
+                  <p>"{m.obsah_prispevku}"</p>
+                  <small className="text-muted">Téma: {m.kategoria}</small>
+                  <div className="testimonial-meta">
+                    - {m.anonymne ? "Anonym" : (m.uzivatel_meno || "Študent")}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
  
          <small>

@@ -1,11 +1,50 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 export const NavigationMain = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadUnreadCount = async () => {
+    if (!user?.id) return;
+    try {
+      const chatsRes = await fetch(`${API_BASE}/api/chat/user/${user.id}`);
+      if (!chatsRes.ok) throw new Error("Failed to load chats");
+      const chats = await chatsRes.json();
+
+      const counts = await Promise.all(
+        (chats || []).map(async (chat) => {
+          try {
+            const res = await fetch(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
+            if (!res.ok) return 0;
+            const messages = await res.json();
+            return (messages || []).filter(
+              (msg) => !msg.videne && msg.odesilatel_typ === "psycholog"
+            ).length;
+          } catch (err) {
+            return 0;
+          }
+        })
+      );
+
+      const total = counts.reduce((sum, count) => sum + count, 0);
+      setUnreadCount(total);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 3000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
@@ -14,8 +53,18 @@ export const NavigationMain = () => {
     }
   };
 
-  const handleSectionClick = (id) => (e) => {
+  const handleSectionClick = (id) => async (e) => {
     e.preventDefault();
+    if (id === "quickhelp" && user?.id) {
+      try {
+        await fetch(`${API_BASE}/api/chat/user/${user.id}/mark-seen-psycholog`, {
+          method: "PUT"
+        });
+        setUnreadCount(0);
+      } catch (err) {
+        console.error(err);
+      }
+    }
     if (location.pathname !== "/home") {
       navigate(`/home#${id}`);
       setTimeout(() => scrollToId(id), 100);
@@ -66,8 +115,13 @@ export const NavigationMain = () => {
               </a>
             </li>
             <li>
-              <a href="/home#quickhelp" onClick={handleSectionClick("quickhelp")} className="page-scroll">
+              <a href="/home#quickhelp" onClick={handleSectionClick("quickhelp")} className="page-scroll" style={{ position: 'relative', display: 'inline-block', paddingRight: '18px' }}>
                 Rýchla pomoc
+                {unreadCount > 0 && (
+                  <span className="chat-unread-badge" style={{ position: 'absolute', top: '-6px', right: '0px' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </a>
             </li>
             <li>
@@ -80,11 +134,11 @@ export const NavigationMain = () => {
                 Expertný systém
               </a>
             </li>
-            <li>
+            {/* <li>
               <a href="/home#contact" onClick={handleSectionClick("contact")} className="page-scroll">
                 Kontakt
               </a>
-            </li>
+            </li> */}
             {user?.role === 'admin' && (
               <li>
                 <Link to="/admin" className="page-scroll">
