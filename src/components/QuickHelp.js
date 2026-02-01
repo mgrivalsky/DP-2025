@@ -6,11 +6,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 const POLL_INTERVAL = 2000; // Poll for new messages every 2 seconds
 
 const QuickHelp = () => {
-<<<<<<< HEAD
   const { user, fetchWithAuth } = useAuth();
-=======
-  const { user } = useAuth();
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
   const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -48,11 +44,7 @@ const QuickHelp = () => {
 
     const pollMessages = async () => {
       try {
-<<<<<<< HEAD
         const response = await fetchWithAuth(`${API_BASE}/api/chat/${chatId}/messages`);
-=======
-        const response = await fetch(`${API_BASE}/api/chat/${chatId}/messages`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         if (!response.ok) throw new Error("Failed to load messages");
         const data = await response.json();
         setMessages(data || []);
@@ -66,11 +58,7 @@ const QuickHelp = () => {
     pollMessages();
     const interval = setInterval(pollMessages, POLL_INTERVAL);
     return () => clearInterval(interval);
-<<<<<<< HEAD
   }, [chatId, isOpen, fetchWithAuth]);
-=======
-  }, [chatId, isOpen]);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   const initializeChat = async () => {
     try {
@@ -81,14 +69,8 @@ const QuickHelp = () => {
       }
 
       // Create or get existing chat with psychologist (ID 1)
-<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/create`, {
         method: "POST",
-=======
-      const response = await fetch(`${API_BASE}/api/chat/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         body: JSON.stringify({
           userId: parseInt(user.id),
           psychologId: 1,
@@ -104,13 +86,7 @@ const QuickHelp = () => {
       setChatId(chat.id_chatu);
 
       // Load existing messages
-<<<<<<< HEAD
       const messagesResponse = await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
-=======
-      const messagesResponse = await fetch(
-        `${API_BASE}/api/chat/${chat.id_chatu}/messages`
-      );
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (messagesResponse.ok) {
         const messagesData = await messagesResponse.json();
         setMessages(messagesData || []);
@@ -130,19 +106,10 @@ const QuickHelp = () => {
     setNewMessage("");
 
     try {
-<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${chatId}/message`, {
         method: "POST",
         body: JSON.stringify({
           obsah: msgToSend,
-=======
-      const response = await fetch(`${API_BASE}/api/chat/${chatId}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          obsah: msgToSend,
-          odesilatel_typ: "uzivatel",
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         }),
       });
 

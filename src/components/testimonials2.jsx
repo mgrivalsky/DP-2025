@@ -35,26 +35,6 @@ export const Testimonials2 = (props) => {
     loadPublishedMessages();
   }, []);
 
-  const loadPublishedMessages = async () => {
-    try {
-      setPublishedLoading(true);
-      const resp = await fetch(`${API_BASE}/api/trust-box/published`);
-      const data = await resp.json();
-      if (!resp.ok) {
-        return;
-      }
-      setPublishedMessages(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPublishedLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPublishedMessages();
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 

@@ -7,11 +7,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 const POLL_INTERVAL = 2000;
 
 const PsychologChatFloating = () => {
-<<<<<<< HEAD
   const { user, fetchWithAuth } = useAuth();
-=======
-  const { user } = useAuth();
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
   const [isOpen, setIsOpen] = useState(false);
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -25,11 +21,7 @@ const PsychologChatFloating = () => {
   const loadChats = async () => {
     if (!user?.id) return;
     try {
-<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/psycholog/${user.id}`);
-=======
-      const response = await fetch(`${API_BASE}/api/chat/psycholog/${user.id}`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!response.ok) throw new Error('Failed to load chats');
       const data = await response.json();
       setChats(data || []);
@@ -46,11 +38,7 @@ const PsychologChatFloating = () => {
     const chatIdToLoad = chatIdOverride || selectedChat?.id_chatu;
     if (!chatIdToLoad) return;
     try {
-<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${chatIdToLoad}/messages`);
-=======
-      const response = await fetch(`${API_BASE}/api/chat/${chatIdToLoad}/messages`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!response.ok) throw new Error('Failed to load messages');
       const data = await response.json();
       setMessages(data || []);
@@ -64,22 +52,14 @@ const PsychologChatFloating = () => {
   const loadUnreadCount = async () => {
     if (!user?.id) return;
     try {
-<<<<<<< HEAD
       const chatsRes = await fetchWithAuth(`${API_BASE}/api/chat/psycholog/${user.id}`);
-=======
-      const chatsRes = await fetch(`${API_BASE}/api/chat/psycholog/${user.id}`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!chatsRes.ok) throw new Error('Failed to load chats');
       const chatList = await chatsRes.json();
 
       const counts = await Promise.all(
         (chatList || []).map(async (chat) => {
           try {
-<<<<<<< HEAD
             const res = await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
-=======
-            const res = await fetch(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
             if (!res.ok) return 0;
             const messagesData = await res.json();
             return (messagesData || []).filter(
@@ -103,33 +83,21 @@ const PsychologChatFloating = () => {
     loadChats();
     const interval = setInterval(loadChats, POLL_INTERVAL);
     return () => clearInterval(interval);
-<<<<<<< HEAD
   }, [user?.id, isOpen, fetchWithAuth]);
-=======
-  }, [user?.id, isOpen]);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   useEffect(() => {
     if (!user?.id) return;
     loadUnreadCount();
     const interval = setInterval(loadUnreadCount, 3000);
     return () => clearInterval(interval);
-<<<<<<< HEAD
   }, [user?.id, fetchWithAuth]);
-=======
-  }, [user?.id]);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   useEffect(() => {
     if (!isOpen || !selectedChat?.id_chatu) return;
     loadMessages();
     const interval = setInterval(loadMessages, POLL_INTERVAL);
     return () => clearInterval(interval);
-<<<<<<< HEAD
   }, [isOpen, selectedChat?.id_chatu, fetchWithAuth]);
-=======
-  }, [isOpen, selectedChat?.id_chatu]);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   useEffect(() => {
     if (messagesRef.current && messages.length > lastMessageCountRef.current) {
@@ -160,20 +128,9 @@ const PsychologChatFloating = () => {
     setMessageText('');
 
     try {
-<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${selectedChat.id_chatu}/message`, {
         method: 'POST',
-        body: JSON.stringify({
-          obsah: msgToSend
-=======
-      const response = await fetch(`${API_BASE}/api/chat/${selectedChat.id_chatu}/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          obsah: msgToSend,
-          odesilatel_typ: 'psycholog'
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
-        })
+        body: JSON.stringify({ obsah: msgToSend })
       });
       if (!response.ok) throw new Error('Failed to send message');
       const message = await response.json();

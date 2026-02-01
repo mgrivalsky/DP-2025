@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../database/db');
-
-<<<<<<< HEAD
 const { authenticateToken } = require('../middleware/auth');
 
 router.use(authenticateToken);
@@ -29,22 +27,16 @@ async function ensureChatAccess(req, chatId) {
 
   return { ok: true, chat };
 }
-
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 // Get all chats for a user
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-<<<<<<< HEAD
     if (isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
     if (Number(userId) !== Number(req.user?.id)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     const result = await pool.query(
       `SELECT c.*, 
               u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email,
@@ -67,15 +59,12 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/psycholog/:psychologId', async (req, res) => {
   try {
     const { psychologId } = req.params;
-<<<<<<< HEAD
     if (!isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
     if (Number(psychologId) !== Number(req.user?.id)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     const result = await pool.query(
       `SELECT c.*, 
               u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email,
@@ -105,11 +94,8 @@ router.get('/psycholog/:psychologId', async (req, res) => {
 router.get('/:chatId/messages', async (req, res) => {
   try {
     const { chatId } = req.params;
-<<<<<<< HEAD
     const access = await ensureChatAccess(req, chatId);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     const result = await pool.query(
       `SELECT * FROM Sprava 
        WHERE id_chatu = $1
@@ -131,16 +117,12 @@ router.put('/user/:userId/mark-seen-psycholog', async (req, res) => {
       return res.status(400).json({ error: 'userId je povinne' });
     }
 
-<<<<<<< HEAD
     if (isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
     if (Number(userId) !== Number(req.user?.id)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
-
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     await pool.query(
       `UPDATE Sprava s
        SET videne = true
@@ -167,15 +149,11 @@ router.put('/:chatId/mark-seen-user', async (req, res) => {
       return res.status(400).json({ error: 'chatId je povinne' });
     }
 
-<<<<<<< HEAD
     const access = await ensureChatAccess(req, chatId);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     if (!isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
-
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     await pool.query(
       `UPDATE Sprava
        SET videne = true
@@ -201,16 +179,12 @@ router.post('/create', async (req, res) => {
       return res.status(400).json({ error: 'userId a psychologId su povinne' });
     }
 
-<<<<<<< HEAD
     if (isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
     if (Number(userId) !== Number(req.user?.id)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
-
-=======
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     // Check if chat already exists
     let chat = await pool.query(
       `SELECT * FROM Chat 
@@ -241,7 +215,6 @@ router.post('/create', async (req, res) => {
 router.post('/:chatId/message', async (req, res) => {
   try {
     const { chatId } = req.params;
-<<<<<<< HEAD
     const { obsah } = req.body;
 
     if (!obsah) {
@@ -252,17 +225,6 @@ router.post('/:chatId/message', async (req, res) => {
     if (!access.ok) return res.status(access.status).json({ error: access.error });
 
     const odesilatel_typ = isPsycholog(req.user?.role) ? 'psycholog' : 'uzivatel';
-=======
-    const { obsah, odesilatel_typ } = req.body;
-
-    if (!obsah || !odesilatel_typ) {
-      return res.status(400).json({ error: 'obsah a odesilatel_typ su povinne' });
-    }
-
-    if (!['uzivatel', 'psycholog'].includes(odesilatel_typ)) {
-      return res.status(400).json({ error: 'Neplatny typ odesilatela' });
-    }
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
     // Insert message
     const message = await pool.query(

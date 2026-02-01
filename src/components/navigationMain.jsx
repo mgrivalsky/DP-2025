@@ -12,25 +12,16 @@ export const NavigationMain = () => {
 
   const loadUnreadCount = async () => {
     if (!user?.id) return;
-<<<<<<< HEAD
     if (String(user?.role || '').toLowerCase() === 'psycholog' || String(user?.role || '').toLowerCase() === 'admin') return;
     try {
       const chatsRes = await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}`);
-=======
-    try {
-      const chatsRes = await fetch(`${API_BASE}/api/chat/user/${user.id}`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!chatsRes.ok) throw new Error("Failed to load chats");
       const chats = await chatsRes.json();
 
       const counts = await Promise.all(
         (chats || []).map(async (chat) => {
           try {
-<<<<<<< HEAD
             const res = await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
-=======
-            const res = await fetch(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
             if (!res.ok) return 0;
             const messages = await res.json();
             return (messages || []).filter(
@@ -54,11 +45,7 @@ export const NavigationMain = () => {
     loadUnreadCount();
     const interval = setInterval(loadUnreadCount, 3000);
     return () => clearInterval(interval);
-<<<<<<< HEAD
   }, [user?.id, fetchWithAuth]);
-=======
-  }, [user?.id]);
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
@@ -69,17 +56,9 @@ export const NavigationMain = () => {
 
   const handleSectionClick = (id) => async (e) => {
     e.preventDefault();
-<<<<<<< HEAD
     if (id === "quickhelp" && user?.id && String(user?.role || '').toLowerCase() !== 'psycholog' && String(user?.role || '').toLowerCase() !== 'admin') {
       try {
         await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}/mark-seen-psycholog`, { method: "PUT" });
-=======
-    if (id === "quickhelp" && user?.id) {
-      try {
-        await fetch(`${API_BASE}/api/chat/user/${user.id}/mark-seen-psycholog`, {
-          method: "PUT"
-        });
->>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         setUnreadCount(0);
       } catch (err) {
         console.error(err);
