@@ -14,6 +14,14 @@ pool.query(
   console.error('Error ensuring zverejnene column:', err);
 });
 
+// Ensure publish column exists (safe for existing DBs)
+pool.query(
+  `ALTER TABLE Schranka_dovery
+   ADD COLUMN IF NOT EXISTS zverejnene BOOLEAN DEFAULT false`
+).catch((err) => {
+  console.error('Error ensuring zverejnene column:', err);
+});
+
 // Submit a trust box message
 router.post('/', authenticateToken, async (req, res) => {
   try {
@@ -42,7 +50,11 @@ router.post('/', authenticateToken, async (req, res) => {
       `INSERT INTO Schranka_dovery (kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologicky)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, stav, id_uzivatela, id_psychologicky, datum_pridania` ,
+<<<<<<< HEAD
       [kategoria, obsah_prispevku, anonymne, publikovatelne, authedUserId, id_psychologicky]
+=======
+      [kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologicky]
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     );
 
     return res.status(201).json(insert.rows[0]);
@@ -55,6 +67,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Get all trust box messages (for admin/psychologist) - CHRÁNENÉ TOKENOM
 router.get('/', authenticateToken, async (req, res) => {
   try {
+<<<<<<< HEAD
     if (isPsycholog(req.user?.role)) {
       const result = await pool.query(
         `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.odpoved, sd.stav,
@@ -75,6 +88,16 @@ router.get('/', authenticateToken, async (req, res) => {
        ORDER BY sd.id_prispevku DESC`,
       [req.user.id]
     );
+=======
+        const result = await pool.query(
+          `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.odpoved, sd.stav,
+            sd.id_uzivatela, sd.id_psychologicky, sd.datum_pridania,
+            CONCAT(u.meno, ' ', u.priezvisko) AS uzivatel_meno
+          FROM Schranka_dovery sd
+          LEFT JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
+          ORDER BY sd.id_prispevku DESC`
+        );
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     return res.json(result.rows || []);
   } catch (err) {
     console.error('Error fetching trust box messages:', err);
@@ -114,12 +137,18 @@ router.patch('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 // Publish a trust box message (only if user allowed publishing) - CHRÁNENÉ TOKENOM
 router.patch('/:id/publish', authenticateToken, async (req, res) => {
   try {
     if (!isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie publikovať príspevky' });
     }
+=======
+// Publish a trust box message (only if user allowed publishing)
+router.patch('/:id/publish', async (req, res) => {
+  try {
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     const id = req.params.id;
 
     const update = await pool.query(
@@ -141,12 +170,18 @@ router.patch('/:id/publish', authenticateToken, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 // Unpublish a trust box message (keep in DB) - CHRÁNENÉ TOKENOM
 router.patch('/:id/unpublish', authenticateToken, async (req, res) => {
   try {
     if (!isPsycholog(req.user?.role)) {
       return res.status(403).json({ error: 'Nemáte oprávnenie zrušiť publikovanie' });
     }
+=======
+// Unpublish a trust box message (keep in DB)
+router.patch('/:id/unpublish', async (req, res) => {
+  try {
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
     const id = req.params.id;
 
     const update = await pool.query(

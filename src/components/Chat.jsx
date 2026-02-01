@@ -8,7 +8,11 @@ const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 const POLL_INTERVAL = 2000; // Poll for new messages every 2 seconds
 
 export const Chat = () => {
+<<<<<<< HEAD
   const { user, fetchWithAuth } = useAuth();
+=======
+  const { user } = useAuth();
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
   const navigate = useNavigate();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -55,7 +59,11 @@ export const Chat = () => {
     loadChats().finally(() => setInitialLoading(false));
     const interval = setInterval(loadChats, POLL_INTERVAL);
     return () => clearInterval(interval);
+<<<<<<< HEAD
   }, [user?.id, fetchWithAuth]);
+=======
+  }, [user?.id]);
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   const loadChats = async () => {
     try {
@@ -65,7 +73,11 @@ export const Chat = () => {
       }
       const userId = parseInt(user.id);
       console.log('Loading chats for user ID:', userId);
+<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/user/${userId}`);
+=======
+      const response = await fetch(`${API_BASE}/api/chat/user/${userId}`);
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to load chats');
@@ -85,7 +97,13 @@ export const Chat = () => {
 
     const loadMessages = async () => {
       try {
+<<<<<<< HEAD
         const response = await fetchWithAuth(`${API_BASE}/api/chat/${selectedChat.id_chatu}/messages`);
+=======
+        const response = await fetch(
+          `${API_BASE}/api/chat/${selectedChat.id_chatu}/messages`
+        );
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || 'Failed to load messages');
@@ -102,7 +120,11 @@ export const Chat = () => {
     loadMessages();
     const interval = setInterval(loadMessages, POLL_INTERVAL);
     return () => clearInterval(interval);
+<<<<<<< HEAD
   }, [selectedChat?.id_chatu, fetchWithAuth]);
+=======
+  }, [selectedChat?.id_chatu]);
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
 
   const handleStartChat = async (psychologId) => {
     try {
@@ -112,8 +134,14 @@ export const Chat = () => {
         throw new Error('Užívateľský ID nie je dostupný');
       }
       console.log('Starting chat with user ID:', user.id, 'psychologId:', psychologId);
+<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/create`, {
         method: 'POST',
+=======
+      const response = await fetch(`${API_BASE}/api/chat/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         body: JSON.stringify({ 
           userId: parseInt(user.id), 
           psychologId: parseInt(psychologId) 
@@ -147,10 +175,24 @@ export const Chat = () => {
     setError('');
 
     try {
+<<<<<<< HEAD
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${selectedChat.id_chatu}/message`, {
         method: 'POST',
         body: JSON.stringify({ obsah: msgToSend })
       });
+=======
+      const response = await fetch(
+        `${API_BASE}/api/chat/${selectedChat.id_chatu}/message`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            obsah: msgToSend,
+            odesilatel_typ: 'uzivatel',
+          }),
+        }
+      );
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to send message');

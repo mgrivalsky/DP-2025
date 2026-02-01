@@ -130,7 +130,11 @@ export const AdminDashboard = () => {
   const loadChatUnreadTotal = async () => {
     try {
       if (!user?.id) return;
+<<<<<<< HEAD
       const resp = await fetchWithToken(`${API_BASE}/api/chat/psycholog/${user.id}`, token);
+=======
+      const resp = await fetch(`${API_BASE}/api/chat/psycholog/${user.id}`);
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
       if (!resp.ok) return;
       const chatsData = (await resp.json()) || [];
       if (chatsData.length === 0) {
@@ -151,7 +155,11 @@ export const AdminDashboard = () => {
       const counts = await Promise.all(
         chatsData.map(async (chat) => {
           try {
+<<<<<<< HEAD
             const response = await fetchWithToken(`${API_BASE}/api/chat/${chat.id_chatu}/messages`, token);
+=======
+            const response = await fetch(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
             if (!response.ok) return 0;
             const msgs = await response.json();
             return (msgs || []).filter(
@@ -246,7 +254,11 @@ export const AdminDashboard = () => {
 
   const publishTrustEntry = async (id) => {
     try {
+<<<<<<< HEAD
       const resp = await fetchWithToken(`${API_BASE}/api/trust-box/${id}/publish`, token, {
+=======
+      const resp = await fetch(`${API_BASE}/api/trust-box/${id}/publish`, {
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         method: 'PATCH'
       });
       const data = await resp.json();
@@ -264,7 +276,11 @@ export const AdminDashboard = () => {
 
   const unpublishTrustEntry = async (id) => {
     try {
+<<<<<<< HEAD
       const resp = await fetchWithToken(`${API_BASE}/api/trust-box/${id}/unpublish`, token, {
+=======
+      const resp = await fetch(`${API_BASE}/api/trust-box/${id}/unpublish`, {
+>>>>>>> aca37c7c0dac3ac28dac205f0742e140ac7dc8c1
         method: 'PATCH'
       });
       const data = await resp.json();
