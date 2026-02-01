@@ -85,7 +85,7 @@ export default function LoginPage() {
 
         <div className="test-credentials">
           <p><strong>Testovacie účty:</strong></p>
-          <p>Psycholog: psycholog@skolka.sk / admin123</p>
+          <p>Psycholog: zuzova@spseke.sk / admin123</p>
           <p>Učiteľ: ucitel@skolka.sk / user123</p>
           <p>Učiteľka: ucitelka@skolka.sk / user123</p>
           <p>Študent: ziak@skolka.sk / user123</p>

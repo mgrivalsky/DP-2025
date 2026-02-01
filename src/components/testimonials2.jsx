@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
@@ -8,11 +8,32 @@ export const Testimonials2 = (props) => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isPublishable, setIsPublishable] = useState(false);
   const [category, setCategory] = useState("");
-  const [submittedMessages, setSubmittedMessages] = useState([]);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [publishedMessages, setPublishedMessages] = useState([]);
+  const [publishedLoading, setPublishedLoading] = useState(false);
 
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, fetchWithAuth } = useAuth();
+
+  const loadPublishedMessages = async () => {
+    try {
+      setPublishedLoading(true);
+      const resp = await fetch(`${API_BASE}/api/trust-box/published`);
+      const data = await resp.json();
+      if (!resp.ok) {
+        return;
+      }
+      setPublishedMessages(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPublishedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPublishedMessages();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,9 +55,8 @@ export const Testimonials2 = (props) => {
         id_uzivatela: user.id,
       };
 
-      const resp = await fetch(`${API_BASE}/api/trust-box`, {
+      const resp = await fetchWithAuth(`${API_BASE}/api/trust-box`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -45,15 +65,6 @@ export const Testimonials2 = (props) => {
         throw new Error(data?.error || "Nepodarilo sa odoslať správu.");
       }
 
-      const displayName = isAnonymous ? "Anonym" : user?.name || "Anonym";
-      const newMessage = {
-        id: data?.id_prispevku,
-        name: displayName,
-        text,
-        category,
-      };
-
-      setSubmittedMessages([newMessage, ...submittedMessages]);
       setSubmitStatus({ type: "success", message: "Správa bola úspešne odoslaná do schránky dôvery." });
 
       // Reset form
@@ -294,15 +305,26 @@ export const Testimonials2 = (props) => {
               </div>
             ))}
 
-          {submittedMessages.map((m, i) => (
-            <div key={`new-${i}`} className="col-md-4">
+          {publishedLoading && (
+            <div className="col-md-12">
+              <p>Načítavam publikované príspevky...</p>
+            </div>
+          )}
+
+          {publishedMessages.map((m, i) => (
+            <div key={`published-${m.id_prispevku || i}`} className="col-md-4">
               <div className="testimonial">
+                <div className="testimonial-image">
+                  <img src="/img/testimonials/anonym.png" alt="Profil bez fotky" />
+                </div>
                 <div className="testimonial-content">
-                  <p>"{m.text}"</p>
+                  <p>"{m.obsah_prispevku}"</p>
                   <small className="text-muted">
-                    Téma: {m.category}
+                    Téma: {m.kategoria}
                   </small>
-                  <div className="testimonial-meta">- {m.name}</div>
+                  <div className="testimonial-meta">
+                    - {m.anonymne ? "Anonym" : (m.uzivatel_meno || "Študent")}
+                  </div>
                 </div>
               </div>
             </div>

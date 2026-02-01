@@ -1,13 +1,18 @@
 const jwt = require('jsonwebtoken');
 
-// Temporary: allow disabling auth via env (default: disabled for easier testing)
-const DISABLE_AUTH = process.env.DISABLE_AUTH !== 'false';
+// Allow disabling auth via env (default: auth ENABLED)
+// Set DISABLE_AUTH=true to bypass token checks (dev-only).
+const DISABLE_AUTH = String(process.env.DISABLE_AUTH || '').toLowerCase() === 'true';
 
 const authenticateToken = (req, res, next) => {
   if (DISABLE_AUTH) {
     // Pass through with a minimal user identity for downstream logic
     req.user = req.user || { id: 2, role: 'ucitel', email: 'ucitel@skolka.sk' };
     return next();
+  }
+
+  if (!process.env.JWT_SECRET) {
+    return res.status(500).json({ error: 'JWT_SECRET nie je nastavený na serveri' });
   }
 
   const authHeader = req.headers['authorization'];

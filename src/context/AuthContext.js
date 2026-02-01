@@ -9,24 +9,28 @@ const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minút v milisekundách
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   // Načítanie užívateľa z localStorage pri načítaní
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
+    const savedToken = localStorage.getItem('token');
     const savedLastActivity = localStorage.getItem('lastActivity');
     
-    if (savedUser && savedLastActivity) {
+    if (savedUser && savedToken && savedLastActivity) {
       const timeSinceLastActivity = Date.now() - parseInt(savedLastActivity);
       
       // Ak prešlo viac ako 5 minút, odhlásiť
       if (timeSinceLastActivity < INACTIVITY_TIMEOUT) {
         setUser(JSON.parse(savedUser));
+        setToken(savedToken);
         setLastActivity(Date.now());
       } else {
         // Vypršal čas, vyčistiť
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         localStorage.removeItem('lastActivity');
       }
     }
@@ -37,10 +41,10 @@ export const AuthProvider = ({ children }) => {
   const resetInactivityTimer = useCallback(() => {
     const now = Date.now();
     setLastActivity(now);
-    if (user) {
+    if (user && token) {
       localStorage.setItem('lastActivity', now.toString());
     }
-  }, [user]);
+  }, [user, token]);
 
   // Sledovanie aktivity užívateľa
   useEffect(() => {
@@ -65,7 +69,7 @@ export const AuthProvider = ({ children }) => {
 
   // Kontrola nečinnosti každých 10 sekúnd
   useEffect(() => {
-    if (!user) return;
+    if (!user || !token) return;
 
     const interval = setInterval(() => {
       const timeSinceLastActivity = Date.now() - lastActivity;
@@ -96,16 +100,22 @@ export const AuthProvider = ({ children }) => {
       }
 
       const userPayload = data.user;
+      const tokenPayload = data.token;
 
-      if (!userPayload) {
+      if (!userPayload || !tokenPayload) {
+        console.error('Login error - missing data:', { user: userPayload, token: tokenPayload });
         throw new Error('Neplatná odpoveď zo servera');
       }
 
-      // Uložiť užívateľa (token už nepoužívame)
+      console.log('✅ Login success, token:', tokenPayload.substring(0, 20) + '...');
+
+      // Uložiť užívateľa a token
       setUser(userPayload);
+      setToken(tokenPayload);
       const now = Date.now();
       setLastActivity(now);
       localStorage.setItem('user', JSON.stringify(userPayload));
+      localStorage.setItem('token', tokenPayload);
       localStorage.setItem('lastActivity', now.toString());
 
       setLoading(false);
@@ -119,8 +129,10 @@ export const AuthProvider = ({ children }) => {
   // Odhlásenie
   const logout = () => {
     setUser(null);
+    setToken(null);
     setLastActivity(Date.now());
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     localStorage.removeItem('lastActivity');
   };
 
@@ -129,17 +141,32 @@ export const AuthProvider = ({ children }) => {
     return user?.role === role;
   };
 
+  const fetchWithAuth = useCallback(
+    (url, options = {}) => {
+      const headers = new Headers(options.headers || {});
+
+      if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+      if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+
+      return fetch(url, { ...options, headers });
+    },
+    [token]
+  );
+
   const value = {
     user,
+    token,
     login,
     logout,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!token,
     // Psycholog je na účely administrácie považovaný za admina
     isAdmin: user?.role === 'psycholog' || user?.role === 'admin',
     isUser: user && user.role !== 'psycholog',
     hasRole,
-    lastActivity
+    lastActivity,
+    fetchWithAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

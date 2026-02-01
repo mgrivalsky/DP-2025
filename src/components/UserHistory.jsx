@@ -24,7 +24,7 @@ const SectionCard = ({ title, count, children }) => (
 );
 
 export default function UserHistory() {
-	const { user, logout } = useAuth();
+	const { user, logout, fetchWithAuth } = useAuth();
 	const navigate = useNavigate();
 	const [sessions, setSessions] = useState([]);
 	const [trustBox, setTrustBox] = useState([]);
@@ -35,6 +35,16 @@ export default function UserHistory() {
 		if (!value) return "Bez dátumu";
 		const d = new Date(value);
 		return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("sk-SK");
+	};
+
+	const formatTime = (time) => {
+		if (!time) return "";
+		// If it's in HH:MM:SS format, remove seconds
+		if (typeof time === "string" && time.includes(":")) {
+			const parts = time.split(":");
+			return parts.length > 2 ? `${parts[0]}:${parts[1]}` : time;
+		}
+		return time;
 	};
 
 	const formatStatus = (stav) => {
@@ -63,9 +73,16 @@ export default function UserHistory() {
 			setError(null);
 			try {
 				const [rSessions, rTrust] = await Promise.all([
-					fetch(`${API_BASE}/api/reservations?userId=${user.id}`),
-					fetch(`${API_BASE}/api/trust-box?userId=${user.id}`),
+					fetchWithAuth(`${API_BASE}/api/reservations`),
+					fetchWithAuth(`${API_BASE}/api/trust-box`),
 				]);
+
+				if (rSessions.status === 401 || rSessions.status === 403) {
+					throw new Error("Nemáte prístup k sedeniam. Prihláste sa znova.");
+				}
+				if (rTrust.status === 401 || rTrust.status === 403) {
+					throw new Error("Nemáte prístup k schránke dôvery. Prihláste sa znova.");
+				}
 
 				if (!rSessions.ok) throw new Error("Nepodarilo sa načítať sedenia");
 				if (!rTrust.ok) throw new Error("Nepodarilo sa načítať schránku dôvery");
@@ -74,12 +91,8 @@ export default function UserHistory() {
 				const tData = await rTrust.json();
 
 				if (active) {
-					const onlyMineSessions = (Array.isArray(sData) ? sData : []).filter(
-						(s) => s.id_uzivatela === user.id || s.uzivatel_email === user.email || s.email === user.email
-					);
-					const onlyMineTrust = (Array.isArray(tData) ? tData : []).filter((t) => t.id_uzivatela === user.id);
-					setSessions(onlyMineSessions);
-					setTrustBox(onlyMineTrust);
+					setSessions(Array.isArray(sData) ? sData : []);
+					setTrustBox(Array.isArray(tData) ? tData : []);
 				}
 			} catch (err) {
 				if (active) setError(err.message || "Chyba pri načítaní dát");
@@ -92,7 +105,7 @@ export default function UserHistory() {
 		return () => {
 			active = false;
 		};
-	}, [user?.id, user?.email]);
+	}, [user?.id, user?.email, fetchWithAuth]);
 
 	const handleLogout = () => {
 		logout();
@@ -177,7 +190,7 @@ export default function UserHistory() {
 													<div style={{ display: "flex", gap: "10px", color: "#4d5b7c", fontSize: "0.95em" }}>
 														<span>{formatDate(s.datum)}</span>
 														<span>•</span>
-														<span>{s.cas_od || ""}{s.cas_do ? ` - ${s.cas_do}` : ""}</span>
+														<span>{formatTime(s.cas_od)}{s.cas_do ? ` - ${formatTime(s.cas_do)}` : ""}</span>
 													</div>
 												</div>
 												<div style={{ textAlign: "right" }}>

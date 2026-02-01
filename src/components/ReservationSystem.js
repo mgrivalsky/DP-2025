@@ -10,6 +10,21 @@ const isSameDay = (d1, d2) =>
   d1.getMonth() === d2.getMonth() &&
   d1.getDate() === d2.getDate();
 
+// Helper funkcií na zaslanie requestu s tokenom
+const fetchWithToken = async (url, token, options = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    console.log('📤 Posielam request s tokenom:', url);
+  } else {
+    console.warn('⚠️ Žiadny token pri requeste na:', url);
+  }
+  return fetch(url, { ...options, headers });
+};
+
 const ReservationSystem = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -18,13 +33,14 @@ const ReservationSystem = () => {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   // Načítať všetky dostupné dni (dni s voľnými slotmi)
   useEffect(() => {
+    if (!token) return; // Čaká sa na token
     const fetchAvailableDays = async () => {
       try {
-        const resp = await fetch(`${API_BASE}/api/cas-slots?psycholog_id=1`);
+        const resp = await fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token);
         const data = await resp.json();
         console.log('Dostupné sloty z API:', data);
         if (resp.ok && data) {
@@ -50,10 +66,11 @@ const ReservationSystem = () => {
       }
     };
     fetchAvailableDays();
-  }, []);
+  }, [token]);
 
   // Načítanie slotov pre vybraný dátum
   useEffect(() => {
+    if (!token) return; // Čaká sa na token
     const fetchSlots = async () => {
       if (!selectedDate) return;
       setLoadingSlots(true);
@@ -65,7 +82,7 @@ const ReservationSystem = () => {
       const dateStr = `${year}-${month}-${day}`;
       console.log('🔍 Načítavam sloty pre dátum:', dateStr);
       try {
-        const resp = await fetch(`${API_BASE}/api/cas-slots?psycholog_id=1&date=${dateStr}`);
+        const resp = await fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1&date=${dateStr}`, token);
         const data = await resp.json();
         console.log('✅ API odpoveď - sloty pre', dateStr, ':', data);
         if (!resp.ok) {
@@ -87,7 +104,7 @@ const ReservationSystem = () => {
     };
 
     fetchSlots();
-  }, [selectedDate]);
+  }, [selectedDate, token]);
 
   const handleReserve = async () => {
     setMessage("");
@@ -112,9 +129,8 @@ const ReservationSystem = () => {
 
     try {
       setSubmitting(true);
-      const resp = await fetch(`${API_BASE}/api/reservations`, {
+      const resp = await fetchWithToken(`${API_BASE}/api/reservations`, token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: user.email,
           datum,
@@ -132,9 +148,8 @@ const ReservationSystem = () => {
       } else {
         setMessage("✅ Rezervácia úspešne vytvorená");
         // označ slot ako obsadený
-        await fetch(`${API_BASE}/api/cas-slots/${selectedSlot.id_casu}`, {
+        await fetchWithToken(`${API_BASE}/api/cas-slots/${selectedSlot.id_casu}`, token, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ volny: false })
         });
         setSlots((prev) => prev.filter((s) => s.id_casu !== selectedSlot.id_casu));

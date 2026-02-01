@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS Schranka_dovery (
     obsah_prispevku VARCHAR(1000) NOT NULL,
     anonymne BOOLEAN DEFAULT false,
     publikovatelne BOOLEAN DEFAULT false,
+    zverejnene BOOLEAN DEFAULT false,
     odpoved VARCHAR(1000),
+    datum_pridania TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id_psychologicky INT REFERENCES Psychologicka(id_psychologicky) ON DELETE SET NULL,
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,
     stav VARCHAR(50) DEFAULT 'novy' CHECK (stav IN ('novy', 'priradzene', 'vyriesene'))

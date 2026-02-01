@@ -108,6 +108,73 @@
   font-size: 1.3rem;
 }
 
+/* Preview window for psychologička layout */
+.admin-preview-window {
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  height: 70vh;
+  overflow: auto;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+.admin-preview-content {
+  position: relative;
+  min-height: 100%;
+  background: #f8fafc;
+}
+
+.admin-preview-window .navbar-fixed-top,
+.admin-preview-window #menu {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* Make navbar single line inside preview window */
+.admin-preview-window .navbar {
+  width: 100%;
+  min-height: auto;
+  padding: 8px 0;
+}
+
+.admin-preview-window #menu .navbar-nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.admin-preview-window #menu .navbar-nav > li {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-preview-window #menu .navbar-nav > li > a {
+  padding: 6px 8px;
+  font-size: 0.93rem;
+  line-height: 1;
+}
+
+.admin-preview-window .logout-link {
+  padding: 4px 8px !important;
+  font-size: 0.88rem !important;
+}
+
+.admin-preview-window #menu .user-section {
+  margin-left: auto !important;
+  padding-left: 15px !important;
+  border-left: 1px solid #ddd !important;
+  flex-wrap: nowrap !important;
+}
+
+.admin-preview-window .chat-icon-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+
 .reservations-list,
 .activities-list {
   display: flex;

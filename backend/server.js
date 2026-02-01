@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const reservationRoutes = require('./routes/reservations');
 const casSlotRoutes = require('./routes/casSlots');
 const trustBoxRoutes = require('./routes/trustBox');
+const chatRoutes = require('./routes/chat');
 const pool = require('./database/db');
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/cas-slots', casSlotRoutes);
 app.use('/api/trust-box', trustBoxRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

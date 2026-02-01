@@ -13,11 +13,28 @@ import ReservationSystem from './ReservationSystem';
 import Expert from './Expert.js';
 import { Contact } from './contact';
 import ChatIconButton from './ChatIconButton';
+import PsychologChatFloating from './PsychologChatFloating';
+import PsychologChat from './PsychologChat';
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 
+// Helper funkcií na zaslanie requestu s tokenom
+const fetchWithToken = async (url, token, options = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    console.log('📤 Posielam request s tokenom:', url);
+  } else {
+    console.warn('⚠️ Žiadny token pri requeste na:', url);
+  }
+  return fetch(url, { ...options, headers });
+};
+
 export const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [slots, setSlots] = useState([]);
@@ -30,6 +47,8 @@ export const AdminDashboard = () => {
   const [answerDraft, setAnswerDraft] = useState({});
   const [contentDraft, setContentDraft] = useState({});
   const [trustEditId, setTrustEditId] = useState(null);
+  const [trustCategoryFilter, setTrustCategoryFilter] = useState('all');
+  const [chatUnreadTotal, setChatUnreadTotal] = useState(0);
   const [reservations, setReservations] = useState([]);
   const [reservationMessage, setReservationMessage] = useState('');
   const [reservationLoading, setReservationLoading] = useState(false);
@@ -55,6 +74,17 @@ export const AdminDashboard = () => {
     onConfirm: null
   });
 
+  const trustCategories = Array.from(
+    new Set((trustEntries || []).map(entry => entry.kategoria).filter(Boolean))
+  );
+  const filteredTrustEntries =
+    trustCategoryFilter === 'all'
+      ? trustEntries
+      : trustEntries.filter(entry => entry.kategoria === trustCategoryFilter);
+  const publishedTrustEntries = (trustEntries || []).filter(
+    (entry) => entry.zverejnene && entry.publikovatelne
+  );
+
   const showConfirm = (options) => {
     setConfirmDialog({
       open: true,
@@ -79,7 +109,7 @@ export const AdminDashboard = () => {
   const loadSlots = async () => {
     try {
       setSlotLoading(true);
-      const resp = await fetch(`${API_BASE}/api/cas-slots?psycholog_id=1`);
+      const resp = await fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token);
       const data = await resp.json();
       if (!resp.ok) {
         setSlotMessage(`Chyba pri načítaní: ${data?.error || 'neznáma'}`);
@@ -97,12 +127,61 @@ export const AdminDashboard = () => {
     }
   };
 
+  const loadChatUnreadTotal = async () => {
+    try {
+      if (!user?.id) return;
+      const resp = await fetchWithToken(`${API_BASE}/api/chat/psycholog/${user.id}`, token);
+      if (!resp.ok) return;
+      const chatsData = (await resp.json()) || [];
+      if (chatsData.length === 0) {
+        setChatUnreadTotal(0);
+        return;
+      }
+
+      const hasUnreadCount = chatsData.every((chat) => typeof chat.unread_count !== 'undefined');
+      if (hasUnreadCount) {
+        const total = chatsData.reduce(
+          (sum, chat) => sum + (Number(chat.unread_count) || 0),
+          0
+        );
+        setChatUnreadTotal(total);
+        return;
+      }
+
+      const counts = await Promise.all(
+        chatsData.map(async (chat) => {
+          try {
+            const response = await fetchWithToken(`${API_BASE}/api/chat/${chat.id_chatu}/messages`, token);
+            if (!response.ok) return 0;
+            const msgs = await response.json();
+            return (msgs || []).filter(
+              (msg) => !msg.videne && msg.odesilatel_typ === 'uzivatel'
+            ).length;
+          } catch {
+            return 0;
+          }
+        })
+      );
+
+      setChatUnreadTotal(counts.reduce((sum, count) => sum + count, 0));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Načítaj rezervácie pri prvom otvorení
   useEffect(() => {
     loadReservations();
     loadSlots();
     loadTrustEntries();
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadChatUnreadTotal();
+    const interval = setInterval(loadChatUnreadTotal, 3000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   useEffect(() => {
     if (activeTab === 'slots') {
@@ -123,7 +202,7 @@ export const AdminDashboard = () => {
   const loadTrustEntries = async () => {
     try {
       setTrustLoading(true);
-      const resp = await fetch(`${API_BASE}/api/trust-box`);
+      const resp = await fetchWithToken(`${API_BASE}/api/trust-box`, token);
       const data = await resp.json();
       if (!resp.ok) {
         setTrustMessage(`Chyba pri načítaní: ${data?.error || 'neznáma'}`);
@@ -147,9 +226,8 @@ export const AdminDashboard = () => {
         odpoved: answerDraft[id] ?? '',
         obsah_prispevku: contentDraft[id],
       };
-      const resp = await fetch(`${API_BASE}/api/trust-box/${id}`, {
+      const resp = await fetchWithToken(`${API_BASE}/api/trust-box/${id}`, token, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
@@ -166,10 +244,46 @@ export const AdminDashboard = () => {
     }
   };
 
+  const publishTrustEntry = async (id) => {
+    try {
+      const resp = await fetchWithToken(`${API_BASE}/api/trust-box/${id}/publish`, token, {
+        method: 'PATCH'
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setTrustMessage(`Chyba pri publikovaní: ${data?.error || 'neznáma'}`);
+        return;
+      }
+      setTrustEntries(prev => prev.map(item => item.id_prispevku === id ? data : item));
+      setTrustMessage('✅ Príspevok publikovaný');
+    } catch (err) {
+      console.error(err);
+      setTrustMessage('Chyba pri publikovaní príspevku');
+    }
+  };
+
+  const unpublishTrustEntry = async (id) => {
+    try {
+      const resp = await fetchWithToken(`${API_BASE}/api/trust-box/${id}/unpublish`, token, {
+        method: 'PATCH'
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setTrustMessage(`Chyba pri zrušení publikovania: ${data?.error || 'neznáma'}`);
+        return;
+      }
+      setTrustEntries(prev => prev.map(item => item.id_prispevku === id ? data : item));
+      setTrustMessage('✅ Príspevok bol skrytý z webu');
+    } catch (err) {
+      console.error(err);
+      setTrustMessage('Chyba pri zrušení publikovania');
+    }
+  };
+
   const loadReservations = async () => {
     try {
       setReservationLoading(true);
-      const resp = await fetch(`${API_BASE}/api/reservations`);
+      const resp = await fetchWithToken(`${API_BASE}/api/reservations`, token);
       const data = await resp.json();
       if (!resp.ok) {
         setReservationMessage(`Chyba pri načítaní: ${data?.error || 'neznáma'}`);
@@ -196,9 +310,8 @@ export const AdminDashboard = () => {
       return;
     }
     try {
-      const resp = await fetch(`${API_BASE}/api/cas-slots`, {
+      const resp = await fetchWithToken(`${API_BASE}/api/cas-slots`, token, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_psychologicky: 1, datum, cas_od, cas_do, volny })
       });
       const data = await resp.json();
@@ -217,7 +330,7 @@ export const AdminDashboard = () => {
 
   const performRemoveSlot = async (id) => {
     try {
-      const resp = await fetch(`${API_BASE}/api/cas-slots/${id}`, { method: 'DELETE' });
+      const resp = await fetchWithToken(`${API_BASE}/api/cas-slots/${id}`, token, { method: 'DELETE' });
       if (!resp.ok) {
         const data = await resp.json();
         setSlotMessage(`Chyba: ${data?.error || 'neznáma'}`);
@@ -244,7 +357,7 @@ export const AdminDashboard = () => {
 
   const performTruncateSlots = async () => {
     try {
-      await fetch(`${API_BASE}/api/cas-slots`, { method: 'DELETE' });
+      await fetchWithToken(`${API_BASE}/api/cas-slots`, token, { method: 'DELETE' });
       setSlots([]);
       setSlotMessage('Všetky sloty zmazané');
     } catch (err) {
@@ -266,9 +379,8 @@ export const AdminDashboard = () => {
 
   const updateReservation = async (id) => {
     try {
-      const resp = await fetch(`${API_BASE}/api/reservations/${id}`, {
+      const resp = await fetchWithToken(`${API_BASE}/api/reservations/${id}`, token, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
       });
       const data = await resp.json();
@@ -287,7 +399,7 @@ export const AdminDashboard = () => {
 
   const performDeleteReservation = async (id) => {
     try {
-      const resp = await fetch(`${API_BASE}/api/reservations/${id}`, { method: 'DELETE' });
+      const resp = await fetchWithToken(`${API_BASE}/api/reservations/${id}`, token, { method: 'DELETE' });
       const data = await resp.json();
       if (!resp.ok) {
         setReservationMessage(`Chyba: ${data?.error || 'neznáma'}`);
@@ -323,9 +435,8 @@ export const AdminDashboard = () => {
     }
     
     try {
-      const resp = await fetch(`${API_BASE}/api/reservations`, {
+      const resp = await fetchWithToken(`${API_BASE}/api/reservations`, token, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email, 
           datum, 
@@ -427,7 +538,12 @@ export const AdminDashboard = () => {
               <button
                 onClick={() => {
                   const fn = confirmDialog.onConfirm;
-                  if (typeof fn === 'function') fn();
+                  if (typeof fn === 'function') {
+                    Promise.resolve(fn())
+                      .finally(() => closeConfirm());
+                  } else {
+                    closeConfirm();
+                  }
                 }}
                 style={{
                   padding: '10px 16px',
@@ -501,6 +617,36 @@ export const AdminDashboard = () => {
                   style={{cursor: 'pointer'}}
                 >
                   Schránka dôvery
+                </a>
+              </li>
+              <li>
+                <a 
+                  onClick={() => setActiveTab('chat')} 
+                  className={activeTab === 'chat' ? 'page-scroll active' : 'page-scroll'}
+                  style={{ cursor: 'pointer', position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+                >
+                  Chaty s užívateľmi
+                  {chatUnreadTotal > 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-14px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: '20px',
+                        height: '20px',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        lineHeight: '20px',
+                        textAlign: 'center',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+                      }}
+                    >
+                      {chatUnreadTotal}
+                    </span>
+                  )}
                 </a>
               </li>
               <li>
@@ -1091,10 +1237,35 @@ export const AdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'chat' && (
+          <div className="admin-section full-width">
+            <PsychologChat />
+          </div>
+        )}
+
         {activeTab === 'trust' && (
           <div className="admin-section full-width">
             <h2>📬 Schránka dôvery</h2>
             <p>Všetky príspevky s možnosťou pridať odpoveď.</p>
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', margin: '10px 0 15px' }}>
+              <label htmlFor="trust-category-filter" style={{ fontWeight: 600 }}>
+                Filter kategórie:
+              </label>
+              <select
+                id="trust-category-filter"
+                value={trustCategoryFilter}
+                onChange={(e) => setTrustCategoryFilter(e.target.value)}
+                style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #ccc' }}
+              >
+                <option value="all">Všetky</option>
+                {trustCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {trustMessage && (
               <div style={{
@@ -1112,24 +1283,39 @@ export const AdminDashboard = () => {
               <p>Načítavam správy...</p>
             ) : trustEntries.length === 0 ? (
               <p>Zatiaľ žiadne príspevky.</p>
+            ) : filteredTrustEntries.length === 0 ? (
+              <p>Žiadne príspevky pre zvolenú kategóriu.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table>
                   <thead>
                     <tr>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Kategória</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>Dátum</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Obsah správy</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Anonymné</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Publikovateľné</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>Publikované</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Stav</th>
                       <th style={{ padding: '12px', textAlign: 'left' }}>Odpoveď</th>
                       <th style={{ padding: '12px', textAlign: 'center' }}>Akcie</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {trustEntries.map(entry => (
+                    {filteredTrustEntries.map(entry => (
                       <tr key={entry.id_prispevku}>
                         <td style={{ padding: '8px' }}>{entry.kategoria}</td>
+                        <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>
+                          {entry.datum_pridania
+                            ? new Date(entry.datum_pridania).toLocaleString('sk-SK', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            : '—'}
+                        </td>
                         <td style={{ padding: '8px', maxWidth: '320px' }}>
                           {trustEditId === entry.id_prispevku ? (
                             <textarea
@@ -1152,6 +1338,7 @@ export const AdminDashboard = () => {
                           )}
                         </td>
                         <td style={{ padding: '8px' }}>{entry.publikovatelne ? 'Áno' : 'Nie'}</td>
+                        <td style={{ padding: '8px' }}>{entry.zverejnene ? 'Áno' : 'Nie'}</td>
                         <td style={{ padding: '8px' }}>{entry.stav}</td>
                         <td style={{ padding: '8px', minWidth: '240px' }}>
                           {trustEditId === entry.id_prispevku ? (
@@ -1159,11 +1346,11 @@ export const AdminDashboard = () => {
                               value={answerDraft[entry.id_prispevku] ?? entry.odpoved ?? ''}
                               onChange={e => setAnswerDraft(prev => ({ ...prev, [entry.id_prispevku]: e.target.value }))}
                               rows={3}
-                              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }}
+                              style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1.05rem', fontFamily: 'inherit', lineHeight: '1.6' }}
                               placeholder="Napíšte odpoveď psychologičky"
                             />
                           ) : (
-                            <div style={{ whiteSpace: 'pre-line', color: entry.odpoved ? '#333' : '#777' }}>
+                            <div style={{ whiteSpace: 'pre-line', color: entry.odpoved ? '#333' : '#777', fontSize: '1.05rem', lineHeight: '1.6' }}>
                               {entry.odpoved && entry.odpoved.trim().length > 0 ? entry.odpoved : '— bez odpovede —'}
                             </div>
                           )}
@@ -1173,13 +1360,13 @@ export const AdminDashboard = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                               <button
                                 onClick={() => updateTrustAnswer(entry.id_prispevku)}
-                                style={{ padding: '4px 8px', fontSize: '12px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
+                                style={{ padding: '8px 14px', fontSize: '13px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2, fontWeight: 600 }}
                               >
                                 Uložiť
                               </button>
                               <button
                                 onClick={() => setTrustEditId(null)}
-                                style={{ padding: '4px 8px', fontSize: '12px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
+                                style={{ padding: '8px 14px', fontSize: '13px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2, fontWeight: 600 }}
                               >
                                 Zrušiť
                               </button>
@@ -1192,14 +1379,26 @@ export const AdminDashboard = () => {
                                   setContentDraft(prev => ({ ...prev, [entry.id_prispevku]: entry.obsah_prispevku }));
                                   setAnswerDraft(prev => ({ ...prev, [entry.id_prispevku]: entry.odpoved || '' }));
                                 }}
-                                style={{ padding: '4px 8px', fontSize: '12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
+                                style={{ padding: '8px 14px', fontSize: '13px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2, fontWeight: 600 }}
                               >
                                 Editovať
                               </button>
                               <button
-                                style={{ padding: '4px 8px', fontSize: '12px', background: '#ffc107', color: '#333', border: 'none', borderRadius: '4px', cursor: 'pointer', lineHeight: 1.2 }}
+                                onClick={() => publishTrustEntry(entry.id_prispevku)}
+                                disabled={!entry.publikovatelne || entry.zverejnene}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '12px',
+                                  background: entry.zverejnene ? '#28a745' : '#ffc107',
+                                  color: entry.zverejnene ? 'white' : '#333',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: (!entry.publikovatelne || entry.zverejnene) ? 'not-allowed' : 'pointer',
+                                  lineHeight: 1.2,
+                                  opacity: (!entry.publikovatelne || entry.zverejnene) ? 0.6 : 1
+                                }}
                               >
-                                Publikovať
+                                {entry.zverejnene ? 'Publikované' : 'Publikovať'}
                               </button>
                             </div>
                           )}
@@ -1210,6 +1409,61 @@ export const AdminDashboard = () => {
                 </table>
               </div>
             )}
+
+            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '2px dashed #e2e8f0' }}>
+              <h3 style={{ marginBottom: '12px' }}>🔎 Prehľad publikovaných príspevkov (čo vidia užívatelia)</h3>
+              {publishedTrustEntries.length === 0 ? (
+                <p>Zatiaľ nie sú publikované žiadne príspevky.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+                  {publishedTrustEntries.map((entry) => (
+                    <div
+                      key={`pub-${entry.id_prispevku}`}
+                      style={{
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        padding: '14px',
+                        background: '#f8fafc',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        minHeight: '180px'
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, color: '#1e293b' }}>{entry.kategoria}</div>
+                      <div style={{ whiteSpace: 'pre-line', color: '#0f172a', lineHeight: 1.5 }}>
+                        {entry.obsah_prispevku}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        {entry.anonymne ? 'Anonym' : (entry.uzivatel_meno || 'Študent')}
+                      </div>
+                      <button
+                        onClick={() => showConfirm({
+                          title: 'Skryť príspevok',
+                          message: 'Chcete tento príspevok skryť z webu? Zostane uložený v databáze.',
+                          confirmText: 'Skryť',
+                          confirmStyle: { background: '#dc3545', color: 'white' },
+                          onConfirm: () => unpublishTrustEntry(entry.id_prispevku)
+                        })}
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: '12px',
+                          background: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          marginTop: 'auto',
+                          alignSelf: 'flex-start'
+                        }}
+                      >
+                        Skryť z webu
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1232,19 +1486,24 @@ export const AdminDashboard = () => {
             >
               ← Späť na prehľad
             </button>
-            <div style={{ marginTop: '20px' }}>
-              <NavigationMain />
-              <HeaderMain data={JsonData.HeaderMain} />
-              <News data={JsonData.News} />
-              <Testimonials2 data={JsonData.Testimonials2} />
-              <QuickHelp data={JsonData.QuickHelp} />
-              <ReservationSystem data={JsonData.ReservationSystem} />
-              <Expert data={JsonData.expert} />
-              <Contact data={JsonData.Contact} />
-              <ChatIconButton />
+            <div className="admin-preview-window">
+              <div className="admin-preview-content">
+                <NavigationMain />
+                <HeaderMain data={JsonData.HeaderMain} />
+                <News data={JsonData.News} />
+                <Testimonials2 data={JsonData.Testimonials2} />
+                <QuickHelp data={JsonData.QuickHelp} />
+                <ReservationSystem data={JsonData.ReservationSystem} />
+                <Expert data={JsonData.expert} />
+                <Contact data={JsonData.Contact} />
+                <ChatIconButton />
+              </div>
             </div>
           </div>
         )}
+
+        {/* Floating chat bubble for psychologička on all tabs */}
+        <PsychologChatFloating />
       </div>
     </div>
   );

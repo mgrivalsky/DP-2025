@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const pool = require('../database/db');
 
 // Lightweight logger for this router
@@ -24,13 +25,19 @@ router.post('/login', async (req, res) => {
       // Heslá sú v seedoch v plaintexte, porovnávame priamo
       if (password === u.heslo) {
         log('Login success Uzivatel', { userId: u.id, role: u.role });
+        const token = jwt.sign(
+          { id: u.id, email: u.email, role: u.role },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
         return res.json({
           user: {
             id: u.id,
             email: u.email,
             name: `${u.meno} ${u.priezvisko}`,
             role: u.role
-          }
+          },
+          token: token
         });
       }
     }
@@ -46,13 +53,19 @@ router.post('/login', async (req, res) => {
       const p = psychResult.rows[0];
       if (password === p.heslo) {
         log('Login success Psychologicka', { userId: p.id, role: 'psycholog' });
+        const token = jwt.sign(
+          { id: p.id, email: p.email, role: 'psycholog' },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
         return res.json({
           user: {
             id: p.id,
             email: p.email,
             name: `${p.meno} ${p.priezvisko}`,
             role: 'psycholog'
-          }
+          },
+          token: token
         });
       }
     }

@@ -2,7 +2,14 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../database/db');
 
-// Jednoduché API bez tokenov: pridať, vypísať všetky, zmazať všetky
+const { authenticateToken } = require('../middleware/auth');
+
+router.use(authenticateToken);
+
+const roleLower = (role) => String(role || '').toLowerCase();
+const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
+
+// Rezervácie sú chránené tokenom. Užívateľ vidí iba svoje záznamy.
 
 // Pomocná funkcia na zistenie id_uzivatela
 async function resolveUserId({ id_uzivatela, email }) {
@@ -16,7 +23,7 @@ async function resolveUserId({ id_uzivatela, email }) {
   return fallback.rows[0]?.id_uzivatela || null;
 }
 
-// 1) Vytvorenie rezervácie (bez tokenu)
+// 1) Vytvorenie rezervácie
 router.post('/', async (req, res) => {
   try {
     const { datum, cas_od, cas_do, poznamka, id_psychologicky, id_uzivatela, email, stav } = req.body;
@@ -25,7 +32,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Chýba povinné pole: datum alebo cas_od' });
     }
 
-    const userId = await resolveUserId({ id_uzivatela, email });
+    const userId = isPsycholog(req.user?.role)
+      ? await resolveUserId({ id_uzivatela, email })
+      : Number(req.user?.id);
     if (!userId) return res.status(400).json({ error: 'Nedá sa určiť užívateľ (zadajte id_uzivatela alebo email)' });
 
     const result = await pool.query(
@@ -47,16 +56,29 @@ router.post('/', async (req, res) => {
 // 2) Vypísať všetky rezervácie
 router.get('/', async (req, res) => {
   try {
+    if (isPsycholog(req.user?.role)) {
+      const result = await pool.query(`
+        SELECT r.id_sedenia, r.datum, r.cas_od, r.cas_do, r.stav, r.poznamka,
+               r.id_psychologicky, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
+               r.id_uzivatela, u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email
+        FROM Rezervacia_sedeni r
+        LEFT JOIN Uzivatel u ON u.id_uzivatela = r.id_uzivatela
+        LEFT JOIN Psychologicka p ON p.id_psychologicky = r.id_psychologicky
+        ORDER BY r.datum DESC, r.cas_od DESC
+      `);
+      return res.json(result.rows);
+    }
+
     const result = await pool.query(`
       SELECT r.id_sedenia, r.datum, r.cas_od, r.cas_do, r.stav, r.poznamka,
              r.id_psychologicky, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
-             r.id_uzivatela, u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email
+             r.id_uzivatela
       FROM Rezervacia_sedeni r
-      LEFT JOIN Uzivatel u ON u.id_uzivatela = r.id_uzivatela
       LEFT JOIN Psychologicka p ON p.id_psychologicky = r.id_psychologicky
+      WHERE r.id_uzivatela = $1
       ORDER BY r.datum DESC, r.cas_od DESC
-    `);
-    res.json(result.rows);
+    `, [req.user.id]);
+    return res.json(result.rows);
   } catch (error) {
     console.error('List reservations error:', error);
     res.status(500).json({ error: 'Chyba servera' });
@@ -66,6 +88,9 @@ router.get('/', async (req, res) => {
 // 3) Zmazať všetky rezervácie
 router.delete('/', async (req, res) => {
   try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
     const countRes = await pool.query('SELECT COUNT(*)::int AS cnt FROM Rezervacia_sedeni');
     await pool.query('TRUNCATE TABLE Rezervacia_sedeni RESTART IDENTITY');
     res.json({ message: 'Všetky rezervácie zmazané', deleted: countRes.rows[0].cnt });
@@ -78,6 +103,9 @@ router.delete('/', async (req, res) => {
 // 4) Upraviť rezerváciu (PATCH)
 router.patch('/:id', async (req, res) => {
   try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
     const { id } = req.params;
     const { stav, poznamka, datum, cas_od, cas_do } = req.body;
 
@@ -137,6 +165,9 @@ router.patch('/:id', async (req, res) => {
 // 5) Vymazať jednu rezerváciu
 router.delete('/:id', async (req, res) => {
   try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
     const { id } = req.params;
     const result = await pool.query('DELETE FROM Rezervacia_sedeni WHERE id_sedenia = $1 RETURNING *', [id]);
     if (result.rows.length === 0) {

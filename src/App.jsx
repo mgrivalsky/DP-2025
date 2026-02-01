@@ -21,6 +21,7 @@ import ChatIconButton from "./components/ChatIconButton";
 import { UserDashboard } from "./components/UserDashboard";
 import { AdminDashboard } from "./components/AdminDashboard";
 import UserHistory from "./components/UserHistory";
+import { Chat } from "./components/Chat";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -54,7 +55,7 @@ const MainPage = ({ data }) => (
     <QuickHelp data={data.QuickHelp} />
     <ReservationSystem data={data.ReservationSystem} />
     <Expert data={data.expert} />
-    <Contact data={data.Contact} />
+    {/* <Contact data={data.Contact} /> */}
     <ChatIconButton />
   </>
 );
@@ -145,6 +146,15 @@ const App = () => {
             element={
               <ProtectedRoute requiredRole="user">
                 <UserHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             }
           />

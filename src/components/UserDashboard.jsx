@@ -30,7 +30,15 @@ export const UserDashboard = () => {
 
         <div className="dashboard-grid">
           <div className="dashboard-card">
-            <h3>📅 Rezervácie</h3>
+            <h3>� Priamy chat</h3>
+            <p>Komunikujte priamo s psychologičkou</p>
+            <button onClick={() => navigate('/chat')} className="card-btn">
+              Otvoriť chat
+            </button>
+          </div>
+
+          <div className="dashboard-card">
+            <h3>�📅 Rezervácie</h3>
             <p>Rezervujte si termín s psychológom</p>
             <button onClick={() => navigate('/reservations')} className="card-btn">
               Prejsť na rezervácie
