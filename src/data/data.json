@@ -27,24 +27,9 @@
 },
   "Gallery": [
     {
-      "title": "Sedenie so študentom",
-      "largeImage": "img/portfolio/01-large.jpg",
-      "smallImage": "img/portfolio/01-small.jpg"
-    },
-    {
-      "title": "Sociálne siete",
-      "largeImage": "img/portfolio/02-large.jpg",
-      "smallImage": "img/portfolio/02-small.jpg"
-    },
-    {
-      "title": "Sedenie so študentom",
-      "largeImage": "img/portfolio/03-large.jpg",
-      "smallImage": "img/portfolio/03-small.jpg"
-    },
-    {
-      "title": "Sedenie so študentom",
-      "largeImage": "img/portfolio/04-large.jpg",
-      "smallImage": "img/portfolio/04-small.jpg"
+      "title": "Úvodná stránka",
+      "largeImage": "img/portfolio/uvodna-stranka.jpg",
+      "smallImage": "img/portfolio/uvodna-stranka.jpg"
     },
     {
       "title": "Schránka dôvery",
@@ -62,9 +47,9 @@
       "smallImage": "img/portfolio/expertny-system.png"
     },
     {
-      "title": "Pridanie príspevku do schránky dôvery",
-      "largeImage": "img/portfolio/pridanie-prispevku-do-schranky.png",
-      "smallImage": "img/portfolio/pridanie-prispevku-do-schranky.png"
+      "title": "Príspevky v schránke dôvery",
+      "largeImage": "img/portfolio/zverejnene-prispevky.png",
+      "smallImage": "img/portfolio/zverejnene-prispevky.png"
     },
     {
       "title": "Rezervácia sedení",
