@@ -22,6 +22,27 @@
   margin-bottom: 15px;
 }
 
+.activities-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #ccc;
+}
+
+.activities-header h2 {
+  margin: 0;
+}
+
+.activities-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .admin-form-card .admin-toolbar {
   margin-top: 25px;
 }

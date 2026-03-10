@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS Rezervacia_sedeni (
     datum DATE NOT NULL,
     cas_od TIME NOT NULL,
     cas_do TIME NOT NULL,
+    vytvorene TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     stav VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (stav IN ('pending', 'potvrdena', 'zrusena', 'dokoncena')),
     poznamka VARCHAR(500),
         videne_psychologom BOOLEAN NOT NULL DEFAULT false,
@@ -83,10 +84,6 @@ CREATE TABLE IF NOT EXISTS Rezervacia_sedeni (
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,
     UNIQUE(datum, cas_od, id_psychologicky)
 );
-
--- -- Migrácia pre existujúce DB (ak tabuľka už existuje)
--- ALTER TABLE IF EXISTS Rezervacia_sedeni
---     ADD COLUMN IF NOT EXISTS videne_psychologom BOOLEAN NOT NULL DEFAULT false;
 
 -- Tabuľka časových slotov (pre psychológa)
 CREATE TABLE IF NOT EXISTS Cas_slot (
@@ -96,6 +93,15 @@ CREATE TABLE IF NOT EXISTS Cas_slot (
     cas_od TIME NOT NULL,
     cas_do TIME NOT NULL,
     volny BOOLEAN DEFAULT true
+);
+
+-- Tabuľka logu použitia expertného systému (dokončenie kroku 4)
+-- Ukladá sa čas dokončenia, užívateľ (id_uzivatela) a typ problému z 1. kroku
+CREATE TABLE IF NOT EXISTS expetny_system (
+    id_dokoncenia SERIAL PRIMARY KEY,
+    datum_cas TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    typ_problemu VARCHAR(255) NOT NULL,
+    id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
 );
 
 -- INSERT testovacích dát

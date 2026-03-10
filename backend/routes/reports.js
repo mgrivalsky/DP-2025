@@ -27,6 +27,7 @@ function parseMonthParam(month) {
 // - počet správ v mesiaci
 // - počet príspevkov do schránky dôvery v mesiaci
 // - počet príspevkov do schránky dôvery podľa kategórie (typu problému)
+// - použitia expertného systému v mesiaci
 router.get('/monthly', async (req, res) => {
   try {
     if (!isPsycholog(req.user?.role)) {
@@ -49,11 +50,31 @@ router.get('/monthly', async (req, res) => {
       `SELECT r.datum::text AS date, COUNT(*)::int AS count
        FROM Rezervacia_sedeni r
        WHERE r.id_psychologicky = $1
+         AND r.stav = 'dokoncena'
          AND r.datum >= $2::date
          AND r.datum < ($2::date + INTERVAL '1 month')
        GROUP BY r.datum
        ORDER BY r.datum ASC`,
       [psychologId, startDate]
+    );
+
+    const expertTotalQ = pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM expetny_system e
+       WHERE e.datum_cas >= $1::date
+         AND e.datum_cas < ($1::date + INTERVAL '1 month')`,
+      [startDate]
+    );
+
+    const expertByProblemTypeQ = pool.query(
+      `SELECT COALESCE(NULLIF(TRIM(e.typ_problemu), ''), 'Neznámy') AS typ_problemu,
+              COUNT(*)::int AS count
+       FROM expetny_system e
+       WHERE e.datum_cas >= $1::date
+         AND e.datum_cas < ($1::date + INTERVAL '1 month')
+       GROUP BY COALESCE(NULLIF(TRIM(e.typ_problemu), ''), 'Neznámy')
+       ORDER BY count DESC, typ_problemu ASC`,
+      [startDate]
     );
 
     const messagesCountQ = pool.query(
@@ -87,11 +108,13 @@ router.get('/monthly', async (req, res) => {
       [psychologId, startDate]
     );
 
-    const [reservationsByDate, messagesCount, trustCount, trustByCategory] = await Promise.all([
+    const [reservationsByDate, messagesCount, trustCount, trustByCategory, expertTotal, expertByProblemType] = await Promise.all([
       reservationsByDateQ,
       messagesCountQ,
       trustCountQ,
-      trustByCategoryQ
+      trustByCategoryQ,
+      expertTotalQ,
+      expertByProblemTypeQ
     ]);
 
     const byDate = reservationsByDate.rows || [];
@@ -113,11 +136,77 @@ router.get('/monthly', async (req, res) => {
       trustBox: {
         count: trustCount.rows?.[0]?.count || 0,
         byCategory: trustByCategory.rows || []
+      },
+      expertSystem: {
+        count: expertTotal.rows?.[0]?.count || 0,
+        byProblemType: expertByProblemType.rows || []
       }
     });
   } catch (error) {
     console.error('Monthly report error:', error);
     res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// GET /api/reports/recent-activities?limit=10
+// Posledných N aktivít:
+// - vyklikanie expertného systému (expetny_system)
+// - vytvorenie rezervácie (Rezervacia_sedeni.vytvorene)
+// - príspevok do schránky dôvery (Schranka_dovery.datum_pridania)
+router.get('/recent-activities', async (req, res) => {
+  try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const limitRaw = Number(req.query.limit);
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 10;
+
+    const q = await pool.query(
+      `SELECT * FROM (
+         SELECT
+           'expert'::text AS activity_type,
+           e.datum_cas AS ts,
+           ('expert:' || e.id_dokoncenia::text) AS id,
+           e.id_uzivatela AS user_id,
+           CONCAT(u.meno, ' ', u.priezvisko) AS user_name,
+           e.typ_problemu AS detail
+         FROM expetny_system e
+         JOIN Uzivatel u ON u.id_uzivatela = e.id_uzivatela
+
+         UNION ALL
+
+         SELECT
+           'reservation'::text AS activity_type,
+           r.vytvorene AS ts,
+           ('reservation:' || r.id_sedenia::text) AS id,
+           r.id_uzivatela AS user_id,
+           CONCAT(u.meno, ' ', u.priezvisko) AS user_name,
+           NULL::text AS detail
+         FROM Rezervacia_sedeni r
+         JOIN Uzivatel u ON u.id_uzivatela = r.id_uzivatela
+
+         UNION ALL
+
+         SELECT
+           'trustbox'::text AS activity_type,
+           sd.datum_pridania AS ts,
+           ('trustbox:' || sd.id_prispevku::text) AS id,
+           sd.id_uzivatela AS user_id,
+           CONCAT(u.meno, ' ', u.priezvisko) AS user_name,
+           sd.kategoria AS detail
+         FROM Schranka_dovery sd
+         JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
+       ) x
+       ORDER BY x.ts DESC NULLS LAST
+       LIMIT $1`,
+      [limit]
+    );
+
+    return res.json({ items: q.rows || [] });
+  } catch (error) {
+    console.error('Recent activities error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
   }
 });
 

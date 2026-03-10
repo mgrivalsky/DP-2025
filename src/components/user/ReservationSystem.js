@@ -19,9 +19,6 @@ const fetchWithToken = async (url, token, options = {}) => {
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('📤 Posielam request s tokenom:', url);
-  } else {
-    console.warn('⚠️ Žiadny token pri requeste na:', url);
   }
   return fetch(url, { ...options, headers });
 };
@@ -43,11 +40,9 @@ const ReservationSystem = () => {
       try {
         const resp = await fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token);
         const data = await resp.json();
-        console.log('Dostupné sloty z API:', data);
         if (resp.ok && data) {
           // Zobrať len voľné sloty a extrahovať unikátne dátumy
           const freeSlots = data.filter(s => s.volny);
-          console.log('Voľné sloty:', freeSlots);
           // Dátum už je v YYYY-MM-DD formáte z API
           const freeDates = [...new Set(
             freeSlots.map(s => s.datum)
@@ -55,11 +50,9 @@ const ReservationSystem = () => {
             const [year, month, day] = dateStr.split('-').map(Number);
             return new Date(year, month - 1, day);
           });
-          console.log('Dostupné dátumy:', freeDates);
           setAvailableDays(freeDates);
         }
       } catch (err) {
-        console.error('Chyba pri načítaní dostupných dní:', err);
         setMessage('❌ Chyba pri načítaní dostupných termínov');
       }
     };
@@ -78,21 +71,17 @@ const ReservationSystem = () => {
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
-      console.log('🔍 Načítavam sloty pre dátum:', dateStr);
       try {
         const resp = await fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1&date=${dateStr}`, token);
         const data = await resp.json();
-        console.log('✅ API odpoveď - sloty pre', dateStr, ':', data);
         if (!resp.ok) {
           setMessage(`❌ Nepodarilo sa načítať sloty: ${data?.error || "neznáma chyba"}`);
           setSlots([]);
         } else {
           const freeSlots = (data || []).filter((s) => s.volny !== false);
-          console.log('✅ Voľné sloty pre zobrazenie:', freeSlots);
           setSlots(freeSlots);
         }
       } catch (err) {
-        console.error(err);
         setMessage("❌ Chyba pri načítaní slotov");
         setSlots([]);
       } finally {
@@ -155,7 +144,6 @@ const ReservationSystem = () => {
       }
     } catch (err) {
       setMessage("❌ Chyba pri volaní API");
-      console.error(err);
     } finally {
       setSubmitting(false);
     }

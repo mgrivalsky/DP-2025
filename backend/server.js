@@ -8,6 +8,7 @@ const casSlotRoutes = require('./routes/casSlots');
 const trustBoxRoutes = require('./routes/trustBox');
 const chatRoutes = require('./routes/chat');
 const reportRoutes = require('./routes/reports');
+const expertRoutes = require('./routes/expert');
 const pool = require('./database/db');
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/api/cas-slots', casSlotRoutes);
 app.use('/api/trust-box', trustBoxRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/expert', expertRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -54,7 +56,17 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📝 API documentation: http://localhost:${PORT}/api/health`);
+});
+
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Stop the other process or set PORT to a different value.`);
+    console.error('Tip (Windows): `netstat -ano | findstr :5000` then `taskkill /PID <pid> /F`');
+    process.exit(1);
+  }
+  console.error('❌ Server error:', err);
+  process.exit(1);
 });

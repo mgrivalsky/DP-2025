@@ -7,47 +7,6 @@ const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
 const isUser = (role) => !isPsycholog(role);
 
-// Ensure publish column exists (safe for existing DBs)
-pool.query(
-  `ALTER TABLE Schranka_dovery
-   ADD COLUMN IF NOT EXISTS zverejnene BOOLEAN DEFAULT false`
-).catch((err) => {
-  console.error('Error ensuring zverejnene column:', err);
-});
-
-// Ensure seen-by-psychologist column exists (safe for existing DBs)
-pool.query(
-  `ALTER TABLE Schranka_dovery
-   ADD COLUMN IF NOT EXISTS videne_psychologom BOOLEAN NOT NULL DEFAULT false`
-).catch((err) => {
-  console.error('Error ensuring videne_psychologom column:', err);
-});
-
-// Ensure seen-by-user column exists (safe for existing DBs)
-pool.query(
-  `ALTER TABLE Schranka_dovery
-   ADD COLUMN IF NOT EXISTS videne_uzivatelom BOOLEAN NOT NULL DEFAULT true`
-).catch((err) => {
-  console.error('Error ensuring videne_uzivatelom column:', err);
-});
-
-// Normalize legacy rows (in case the column existed with NULLs)
-pool.query(
-  `UPDATE Schranka_dovery
-   SET videne_psychologom = false
-   WHERE videne_psychologom IS NULL`
-).catch((err) => {
-  console.error('Error normalizing videne_psychologom NULLs:', err);
-});
-
-pool.query(
-  `UPDATE Schranka_dovery
-   SET videne_uzivatelom = true
-   WHERE videne_uzivatelom IS NULL`
-).catch((err) => {
-  console.error('Error normalizing videne_uzivatelom NULLs:', err);
-});
-
 // Submit a trust box message
 router.post('/', authenticateToken, async (req, res) => {
   try {

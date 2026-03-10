@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "../styles/Expert.css";
+import { useAuth } from "../../context/AuthContext";
 
 /**
  * Expertný systém (chatbot) pre študentov.
@@ -402,9 +403,17 @@ const FLOW = {
 export default function Expert() {
   const [currentId, setCurrentId] = useState("root");
   const [history, setHistory] = useState([]);
+  const [rootProblemType, setRootProblemType] = useState("");
+  const [completionLogged, setCompletionLogged] = useState(false);
+  const { fetchWithAuth, isAuthenticated } = useAuth();
+
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const node = useMemo(() => FLOW[currentId], [currentId]);
 
-  const goNext = (nextId) => {
+  const goNext = (nextId, meta = {}) => {
+    if (currentId === "root" && meta?.problemTypeLabel) {
+      setRootProblemType(String(meta.problemTypeLabel));
+    }
     setHistory((h) => [...h, currentId]);
     setCurrentId(nextId);
   };
@@ -422,7 +431,43 @@ export default function Expert() {
   const reset = () => {
     setCurrentId("root");
     setHistory([]);
+    setRootProblemType("");
+    setCompletionLogged(false);
   };
+
+  // Pri prvom dosiahnutí kroku 4 (result + history.length===3) ulož do DB čas + študenta + typ problému z 1. kroku.
+  useEffect(() => {
+    const isStep4 = node?.type === "result" && history.length === 3;
+    if (!isStep4) return;
+    if (completionLogged) return;
+    if (!rootProblemType) return;
+    if (!isAuthenticated) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetchWithAuth(`${API_BASE}/api/expert/step4`, {
+          method: "POST",
+          body: JSON.stringify({ problemType: rootProblemType })
+        });
+
+        if (!cancelled && resp.ok) {
+          await resp.json().catch(() => null);
+          setCompletionLogged(true);
+        } else if (!cancelled) {
+          await resp.json().catch(() => null);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          // ignore silently
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, fetchWithAuth, history.length, isAuthenticated, node?.type, rootProblemType, completionLogged]);
 
   
   return (
@@ -459,7 +504,11 @@ export default function Expert() {
                 {node.options.map((opt, i) => (
                   <button 
                     key={i} 
-                    onClick={() => goNext(opt.next)}
+                    onClick={() =>
+                      goNext(opt.next, {
+                        problemTypeLabel: currentId === "root" ? opt.label : undefined
+                      })
+                    }
                     className="expert-option-btn"
                   >
                     <span>{opt.label}</span>

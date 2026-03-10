@@ -7,29 +7,51 @@ const AdminOverview = () => {
   const { token } = useAuth();
   const [reservations, setReservations] = useState([]);
   const [slots, setSlots] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [activityLimit, setActivityLimit] = useState(10);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    loadActivities(activityLimit);
+  }, [activityLimit]);
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const [resResp, slotsResp] = await Promise.all([
+      const [resResp, slotsResp, actResp] = await Promise.all([
         fetchWithToken(`${API_BASE}/api/reservations`, token),
-        fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token)
+        fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token),
+        fetchWithToken(`${API_BASE}/api/reports/recent-activities?limit=${activityLimit}`, token)
       ]);
       
       const resData = await resResp.json();
       const slotsData = await slotsResp.json();
+      const actData = await actResp.json();
       
       if (resResp.ok) setReservations(resData || []);
       if (slotsResp.ok) setSlots(slotsData || []);
+      if (actResp.ok) setRecentActivities(actData?.items || []);
     } catch (err) {
-      console.error(err);
+      // ignore
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadActivities = async (limit) => {
+    try {
+      const actResp = await fetchWithToken(
+        `${API_BASE}/api/reports/recent-activities?limit=${Number(limit) || 10}`,
+        token
+      );
+      const actData = await actResp.json();
+      if (actResp.ok) setRecentActivities(actData?.items || []);
+    } catch (err) {
+      // ignore
     }
   };
 
@@ -40,12 +62,30 @@ const AdminOverview = () => {
     completedSessions: reservations.filter(r => r.stav === 'dokoncena').length
   };
 
-  const recentActivities = [
-    { id: 1, user: 'Ján Kovač', action: 'Vytvoril rezerváciu', time: 'pred 10 min' },
-    { id: 2, user: 'Peter Malý', action: 'Použil expert systém', time: 'pred 25 min' },
-    { id: 3, user: 'Mária Veselá', action: 'Zrušil rezerváciu', time: 'pred 1 hodinou' },
-    { id: 4, user: 'Zuzana Nová', action: 'Pridala príspevok do schránky dôvery', time: 'pred 2 hodinami' }
-  ];
+  const formatRelativeTime = (ts) => {
+    const d = ts ? new Date(ts) : null;
+    if (!d || isNaN(d.getTime())) return '';
+    const diffMs = Date.now() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'pred chvíľou';
+    if (diffMin < 60) return `pred ${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return diffH === 1 ? 'pred 1 hodinou' : `pred ${diffH} hodinami`;
+    return d.toLocaleDateString('sk-SK') + ' ' + d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const activityAction = (type) => {
+    switch (String(type || '')) {
+      case 'expert':
+        return 'Použil expert systém';
+      case 'reservation':
+        return 'Vytvoril rezerváciu';
+      case 'trustbox':
+        return 'Pridal príspevok do schránky dôvery';
+      default:
+        return 'Aktivita';
+    }
+  };
 
   const upcomingReservations = (() => {
     const today = new Date();
@@ -130,17 +170,36 @@ const AdminOverview = () => {
         </div>
 
         <div className="admin-section">
-          <h2>🔔 Posledné aktivity</h2>
+          <div className="activities-header">
+            <h2>🔔 Posledné aktivity</h2>
+            <div className="activities-controls">
+              <span className="admin-toolbar-label">Zobraziť:</span>
+              <select
+                className="admin-select admin-select-inline"
+                value={activityLimit}
+                onChange={(e) => setActivityLimit(parseInt(e.target.value, 10))}
+                aria-label="Počet zobrazených aktivít"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
           <div className="activities-list">
-            {recentActivities.map(activity => (
-              <div key={activity.id} className="activity-item">
-                <div>
-                  <strong>{activity.user}</strong>
-                  <span> - {activity.action}</span>
+            {recentActivities.length === 0 ? (
+              <p>Žiadne aktivity</p>
+            ) : (
+              recentActivities.map((activity) => (
+                <div key={activity.id} className="activity-item">
+                  <div>
+                    <strong>{activity.user_name || 'Neznámy užívateľ'}</strong>
+                    <span> - {activityAction(activity.activity_type)}</span>
+                  </div>
+                  <span className="activity-time">{formatRelativeTime(activity.ts)}</span>
                 </div>
-                <span className="activity-time">{activity.time}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

@@ -67,9 +67,11 @@ const AdminReports = () => {
       const reservationsTotal = Number(reportData?.reservations?.total) || 0;
       const messagesCount = Number(reportData?.messages?.count) || 0;
       const trustCount = Number(reportData?.trustBox?.count) || 0;
+      const expertCount = Number(reportData?.expertSystem?.count) || 0;
 
       const byDate = reportData?.reservations?.byDate || [];
       const byCategory = reportData?.trustBox?.byCategory || [];
+      const expertByProblemType = reportData?.expertSystem?.byProblemType || [];
 
       const sessionsByDateTotal = byDate.reduce(
         (sum, row) => sum + (Number(row?.count) || 0),
@@ -80,16 +82,22 @@ const AdminReports = () => {
         0
       );
 
+      const expertByProblemTypeTotal = expertByProblemType.reduce(
+        (sum, row) => sum + (Number(row?.count) || 0),
+        0
+      );
+
       const lines = [];
       lines.push(['Mesačný report', monthLabel]);
       lines.push([" "]);
       lines.push(['Súhrn']);
-      lines.push(['Celkový počet sedení v mesiaci', reservationsTotal]);
+      lines.push(['Celkový počet dokončených sedení v mesiaci', reservationsTotal]);
       lines.push(['Celkový počet správ v mesiaci', messagesCount]);
       lines.push(['Celkový počet príspevkov v schránke dôvery', trustCount]);
+      lines.push(['Použitie expertného systému', expertCount]);
       lines.push([" "]);
-      lines.push(['Počet sedení podľa dátumu']);
-      lines.push(['Dátum', 'Počet sedení']);
+      lines.push(['Počet dokončených sedení podľa dátumu']);
+      lines.push(['Dátum', 'Počet dokončených sedení']);
       if (byDate.length === 0) {
         lines.push(['(žiadne)', 0]);
       } else {
@@ -97,7 +105,7 @@ const AdminReports = () => {
           lines.push([toYmd(row.date), Number(row.count) || 0]);
         });
       }
-      lines.push(['Spolu sedení', sessionsByDateTotal]);
+      lines.push(['Spolu dokončených sedení', sessionsByDateTotal]);
       lines.push([" "]);
       lines.push(['Schránka dôvery podľa typu problému']);
       lines.push(['Kategória', 'Počet']);
@@ -109,6 +117,18 @@ const AdminReports = () => {
         });
       }
       lines.push(['Spolu príspevkov', trustByCategoryTotal]);
+      lines.push([" "]);
+
+      lines.push(['Použitie expertného systému podľa typu problému']);
+      lines.push(['Typ problému', 'Počet']);
+      if (expertByProblemType.length === 0) {
+        lines.push(['(žiadne)', 0]);
+      } else {
+        expertByProblemType.forEach((row) => {
+          lines.push([row.typ_problemu || 'Neznámy', Number(row.count) || 0]);
+        });
+      }
+      lines.push(['Spolu použití', expertByProblemTypeTotal || expertCount]);
       lines.push([" "]);
       const sheet = XLSX.utils.aoa_to_sheet(lines);
 
@@ -144,8 +164,9 @@ const AdminReports = () => {
 
       const titleRow = 0;
       const summaryHeaderRow = findRowIndex('Súhrn');
-      const byDateSectionRow = findRowIndex('Počet sedení podľa dátumu');
+      const byDateSectionRow = findRowIndex('Počet dokončených sedení podľa dátumu');
       const byCategorySectionRow = findRowIndex('Schránka dôvery podľa typu problému');
+      const expertByTypeSectionRow = findRowIndex('Použitie expertného systému podľa typu problému');
 
       setRowStyle(titleRow, {
         font: { bold: true, sz: 16, color: { rgb: '0F172A' } },
@@ -166,6 +187,7 @@ const AdminReports = () => {
       if (summaryHeaderRow >= 0) setRowStyle(summaryHeaderRow, sectionHeaderStyle);
       if (byDateSectionRow >= 0) setRowStyle(byDateSectionRow, sectionHeaderStyle);
       if (byCategorySectionRow >= 0) setRowStyle(byCategorySectionRow, sectionHeaderStyle);
+      if (expertByTypeSectionRow >= 0) setRowStyle(expertByTypeSectionRow, sectionHeaderStyle);
 
       const tableHeaderStyle = {
         font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
@@ -206,7 +228,7 @@ const AdminReports = () => {
       if (byDateSectionRow >= 0) {
         const headerRow = byDateSectionRow + 1;
         setRowStyle(headerRow, tableHeaderStyle);
-        const totalRow = findRowIndex('Spolu sedení');
+        const totalRow = findRowIndex('Spolu dokončených sedení');
         const start = headerRow + 1;
         const end = totalRow >= 0 ? totalRow - 1 : start - 1;
         if (end >= start) styleTableRegion(start, end);
@@ -237,6 +259,23 @@ const AdminReports = () => {
         }
       }
 
+      if (expertByTypeSectionRow >= 0) {
+        const headerRow = expertByTypeSectionRow + 1;
+        setRowStyle(headerRow, tableHeaderStyle);
+        const totalRow = findRowIndex('Spolu použití');
+        const start = headerRow + 1;
+        const end = totalRow >= 0 ? totalRow - 1 : start - 1;
+        if (end >= start) styleTableRegion(start, end);
+        if (totalRow >= 0) {
+          setRowStyle(totalRow, {
+            font: { bold: true, sz: 11, color: { rgb: '0F172A' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'EFF6FF' } },
+            border: thinBorder
+          });
+          styleTableRegion(totalRow, totalRow);
+        }
+      }
+
       sheet['!cols'] = [
         { wch: 52 },
         { wch: 24 },
@@ -244,8 +283,11 @@ const AdminReports = () => {
       sheet['!rows'] = lines.map((row, idx) => {
         const label = Array.isArray(row) ? row[0] : '';
         const isBlank = isBlankRow(row);
-        const isSection = label === 'Súhrn' || label === 'Počet sedení podľa dátumu' || label === 'Schránka dôvery podľa typu problému';
-        const isHeader = label === 'Dátum' || label === 'Kategória';
+        const isSection = label === 'Súhrn'
+          || label === 'Počet dokončených sedení podľa dátumu'
+          || label === 'Schránka dôvery podľa typu problému'
+          || label === 'Použitie expertného systému podľa typu problému';
+        const isHeader = label === 'Dátum' || label === 'Kategória' || label === 'Typ problému';
 
         if (isBlank) return { hpt: 10 };
         if (idx === 0) return { hpt: 28 };
@@ -300,7 +342,7 @@ const AdminReports = () => {
               <div className="stat-icon">🗓️</div>
               <div className="stat-info">
                 <h3>{reportData?.reservations?.total ?? 0}</h3>
-                <p>Počet sedení v mesiaci</p>
+                <p>Počet dokončených sedení v mesiaci</p>
               </div>
             </div>
             <div className="stat-card">
@@ -322,7 +364,7 @@ const AdminReports = () => {
           <div className="reports-grid">
             <div className="report-card">
               <div className="report-card-head">
-                <h3 className="report-card-title">📅 Počet sedení podľa dátumu</h3>
+                <h3 className="report-card-title">📅 Počet dokončených sedení podľa dátumu</h3>
               </div>
               <div className="report-card-body">
                 {reportData.reservations?.byDate?.length > 0 ? (
@@ -331,7 +373,7 @@ const AdminReports = () => {
                       <thead>
                         <tr>
                           <th>Dátum</th>
-                          <th>Počet sedení</th>
+                          <th>Počet dokončených sedení</th>
                         </tr>
                       </thead>
                       <tbody>

@@ -126,8 +126,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Neplatná odpoveď zo servera');
       }
 
-      console.log('✅ Login success, token:', tokenPayload.substring(0, 20) + '...');
-
       // Uložiť užívateľa a token
       setUser(userPayload);
       setToken(tokenPayload);
