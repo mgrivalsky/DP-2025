@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState(Date.now());
+  const [confirmedSessionsCount, setConfirmedSessionsCount] = useState(0);
 
   // Načítanie užívateľa z localStorage pri načítaní
   useEffect(() => {
@@ -24,9 +25,27 @@ export const AuthProvider = ({ children }) => {
       
       // Ak prešlo viac ako 5 minút, odhlásiť
       if (timeSinceLastActivity < INACTIVITY_TIMEOUT) {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
         setToken(savedToken);
         setLastActivity(Date.now());
+
+        // Načítať počet potvrdených sedení 1x po obnovení relácie (užívateľ)
+        try {
+          const role = String(parsedUser?.role || '').toLowerCase();
+          if (role !== 'psycholog' && role !== 'admin' && parsedUser?.id) {
+            fetch(`${API_BASE}/api/reservations/user/${parsedUser.id}/confirmed-count`, {
+              headers: { Authorization: `Bearer ${savedToken}`, Accept: 'application/json' }
+            })
+              .then((r) => (r.ok ? r.json() : null))
+              .then((d) => {
+                if (d) setConfirmedSessionsCount(Number(d?.count) || 0);
+              })
+              .catch(() => {});
+          }
+        } catch {
+          // ignore
+        }
       } else {
         // Vypršal čas, vyčistiť
         localStorage.removeItem('user');
@@ -112,11 +131,28 @@ export const AuthProvider = ({ children }) => {
       // Uložiť užívateľa a token
       setUser(userPayload);
       setToken(tokenPayload);
+      setConfirmedSessionsCount(0);
       const now = Date.now();
       setLastActivity(now);
       localStorage.setItem('user', JSON.stringify(userPayload));
       localStorage.setItem('token', tokenPayload);
       localStorage.setItem('lastActivity', now.toString());
+
+      // Načítať počet potvrdených sedení 1x (užívateľ)
+      try {
+        const role = String(userPayload?.role || '').toLowerCase();
+        if (role !== 'psycholog' && role !== 'admin' && userPayload?.id) {
+          const countResp = await fetch(`${API_BASE}/api/reservations/user/${userPayload.id}/confirmed-count`, {
+            headers: { Authorization: `Bearer ${tokenPayload}`, Accept: 'application/json' }
+          });
+          if (countResp.ok) {
+            const countData = await countResp.json();
+            setConfirmedSessionsCount(Number(countData?.count) || 0);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
 
       setLoading(false);
       return userPayload;
@@ -131,6 +167,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     setLastActivity(Date.now());
+    setConfirmedSessionsCount(0);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('lastActivity');
@@ -166,7 +203,8 @@ export const AuthProvider = ({ children }) => {
     isUser: user && user.role !== 'psycholog',
     hasRole,
     lastActivity,
-    fetchWithAuth
+    fetchWithAuth,
+    confirmedSessionsCount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

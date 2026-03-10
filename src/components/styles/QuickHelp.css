@@ -1,0 +1,268 @@
+#quickhelp {
+	padding: 100px 0;
+	background: #f6f6f6;
+}
+
+#quickhelp .section-title h2 {
+	font-size: 28px;
+	font-weight: 700;
+	margin-bottom: 10px;
+	color: #333;
+}
+
+#quickhelp .section-title p {
+	color: #666;
+	font-size: 16px;
+	max-width: 600px;
+	margin: 0 auto 40px auto;
+}
+
+.chat-open-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background-color: #3b82f6;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	padding: 10px 16px;
+	cursor: pointer;
+	font-weight: 500;
+	transition: background 0.3s ease;
+}
+
+.chat-open-btn:hover {
+	background-color: #2563eb;
+}
+
+.chat-box {
+	margin: 0 auto;
+	max-width: 600px;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	height: 420px;
+}
+
+.chat-header {
+	background-color: #3b82f6;
+	color: white;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px 16px;
+}
+
+.chat-status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 500;
+}
+
+.quickhelp-status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #22c55e;
+	animation: quickhelpPulse 1.5s infinite;
+}
+
+
+.quickhelp-error {
+	background: #fdecea;
+	color: #a02721;
+	padding: 10px;
+	margin: 10px;
+	border-radius: 6px;
+	font-size: 0.85rem;
+	border: 1px solid #f5c6cb;
+}
+
+.quickhelp-error__close {
+	margin-left: 10px;
+	background: none;
+	border: none;
+	color: #a02721;
+	cursor: pointer;
+}
+
+.quickhelp-placeholder {
+	text-align: center;
+	padding: 20px;
+	color: #999;
+}
+
+.quickhelp-msgTime {
+	font-size: 0.7rem;
+	opacity: 0.7;
+	margin-top: 4px;
+	display: block;
+}
+
+
+@keyframes quickhelpPulse {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.3);
+		opacity: 0.7;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.chat-close {
+	background: transparent;
+	color: white;
+	border: none;
+	font-size: 18px;
+	cursor: pointer;
+}
+
+.chat-messages {
+	flex: 1;
+	padding: 10px;
+	overflow-y: auto;
+	background: #f9fafb;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.chat-message {
+	max-width: 70%;
+	padding: 8px 12px;
+	border-radius: 16px;
+	line-height: 1.4;
+	word-wrap: break-word;
+}
+
+.psych-msg {
+	background: #e5e7eb;
+	align-self: flex-start;
+}
+
+.user-msg {
+	background: #3b82f6;
+	color: white;
+	align-self: flex-end;
+}
+
+.chat-input {
+	display: flex;
+	border-top: 1px solid #e5e7eb;
+	padding: 8px;
+	background: white;
+}
+
+.chat-input input {
+	flex: 1;
+	border: none;
+	outline: none;
+	padding: 8px;
+	font-size: 14px;
+}
+
+.chat-input button {
+	background: #3b82f6;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	padding: 8px 10px;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.chat-input button:hover {
+	background: #2563eb;
+}
+
+.chat-icon-btn {
+	position: fixed;
+	bottom: 25px;
+	right: 25px;
+	background-color: #3b82f6;
+	color: white;
+	border: none;
+	border-radius: 50%;
+	width: 60px;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+	transition: background 0.3s ease, transform 0.2s ease;
+	z-index: 1000;
+	animation: quickhelpFadeIn 0.5s ease;
+	overflow: visible;
+}
+
+.chat-icon-btn:hover {
+	background-color: #2563eb;
+	transform: scale(1.1);
+}
+
+.chat-unread-badge {
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	background-color: #ef4444;
+	color: white;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+	z-index: 1002;
+}
+
+.psycholog-chat-icon-btn {
+	position: fixed;
+	bottom: 25px;
+	right: 25px;
+	background-color: white;
+	color: #3b82f6;
+	border: none;
+	border-radius: 50%;
+	width: 60px;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+	transition: background 0.3s ease, transform 0.2s ease;
+	z-index: 1000;
+	animation: quickhelpFadeIn 0.5s ease;
+	overflow: visible;
+}
+
+.psycholog-chat-icon-btn:hover {
+	background-color: #f0f0f0;
+	transform: scale(1.1);
+}
+
+@keyframes quickhelpFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

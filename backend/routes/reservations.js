@@ -38,7 +38,17 @@ router.post('/', async (req, res) => {
     if (!userId) return res.status(400).json({ error: 'Nedá sa určiť užívateľ (zadajte id_uzivatela alebo email)' });
 
     const result = await pool.query(
-      'INSERT INTO Rezervacia_sedeni (datum, cas_od, cas_do, poznamka, id_psychologicky, id_uzivatela, stav) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      `INSERT INTO Rezervacia_sedeni (datum, cas_od, cas_do, poznamka, id_psychologicky, id_uzivatela, stav, videne_psychologom)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, false)
+       RETURNING id_sedenia,
+                 datum::text AS datum,
+                 cas_od,
+                 cas_do,
+                 stav,
+                 poznamka,
+                 videne_psychologom,
+                 id_psychologicky,
+                 id_uzivatela`,
       [datum, cas_od, cas_do || cas_od, poznamka || null, id_psychologicky || 1, userId, stav || 'pending']
     );
 
@@ -53,12 +63,94 @@ router.post('/', async (req, res) => {
   }
 });
 
+// 1b) Počet nevidených rezervácií (psycholog)
+router.get('/psycholog/:psychologId/unseen-count', async (req, res) => {
+  try {
+    const psychologId = parseInt(req.params.psychologId, 10);
+    if (!psychologId) {
+      return res.status(400).json({ error: 'psychologId je povinne' });
+    }
+
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+    if (Number(psychologId) !== Number(req.user?.id)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const result = await pool.query(
+      'SELECT COUNT(*)::int AS count FROM Rezervacia_sedeni WHERE id_psychologicky = $1 AND videne_psychologom = false',
+      [psychologId]
+    );
+    return res.json({ count: result.rows[0]?.count || 0 });
+  } catch (error) {
+    console.error('Unseen reservations count error:', error);
+    res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// 1c) Označiť všetky rezervácie ako videné (psycholog)
+router.put('/psycholog/:psychologId/mark-seen', async (req, res) => {
+  try {
+    const psychologId = parseInt(req.params.psychologId, 10);
+    if (!psychologId) {
+      return res.status(400).json({ error: 'psychologId je povinne' });
+    }
+
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+    if (Number(psychologId) !== Number(req.user?.id)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    await pool.query(
+      'UPDATE Rezervacia_sedeni SET videne_psychologom = true WHERE id_psychologicky = $1 AND videne_psychologom = false',
+      [psychologId]
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Mark reservations seen error:', error);
+    res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// 1d) Počet potvrdených sedení (užívateľ)
+router.get('/user/:userId/confirmed-count', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ error: 'userId je povinne' });
+    }
+
+    if (isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+    if (Number(userId) !== Number(req.user?.id)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Rezervacia_sedeni
+       WHERE id_uzivatela = $1
+         AND LOWER(TRIM(stav)) = 'potvrdena'`,
+      [userId]
+    );
+
+    return res.json({ count: result.rows[0]?.count || 0 });
+  } catch (error) {
+    console.error('Confirmed reservations count error:', error);
+    res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
 // 2) Vypísať všetky rezervácie
 router.get('/', async (req, res) => {
   try {
     if (isPsycholog(req.user?.role)) {
       const result = await pool.query(`
-        SELECT r.id_sedenia, r.datum, r.cas_od, r.cas_do, r.stav, r.poznamka,
+        SELECT r.id_sedenia, r.datum::text AS datum, r.cas_od, r.cas_do, r.stav, r.poznamka, r.videne_psychologom,
                r.id_psychologicky, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
                r.id_uzivatela, u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email
         FROM Rezervacia_sedeni r
@@ -70,7 +162,7 @@ router.get('/', async (req, res) => {
     }
 
     const result = await pool.query(`
-      SELECT r.id_sedenia, r.datum, r.cas_od, r.cas_do, r.stav, r.poznamka,
+      SELECT r.id_sedenia, r.datum::text AS datum, r.cas_od, r.cas_do, r.stav, r.poznamka,
              r.id_psychologicky, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
              r.id_uzivatela
       FROM Rezervacia_sedeni r
@@ -150,7 +242,18 @@ router.patch('/:id', async (req, res) => {
     }
 
     params.push(id);
-    const sql = `UPDATE Rezervacia_sedeni SET ${updates.join(', ')} WHERE id_sedenia = $${paramCount} RETURNING *`;
+    const sql = `UPDATE Rezervacia_sedeni
+                 SET ${updates.join(', ')}
+                 WHERE id_sedenia = $${paramCount}
+                 RETURNING id_sedenia,
+                           datum::text AS datum,
+                           cas_od,
+                           cas_do,
+                           stav,
+                           poznamka,
+                           videne_psychologom,
+                           id_psychologicky,
+                           id_uzivatela`;
     const result = await pool.query(sql, params);
     res.json({ message: 'OK', reservation: result.rows[0] });
   } catch (error) {

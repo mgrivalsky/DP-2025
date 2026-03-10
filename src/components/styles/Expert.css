@@ -1,0 +1,238 @@
+@keyframes expertSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expert-system {
+  font-family: inherit;
+  padding: 100px 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecf1 100%);
+}
+
+.expert-system__intro {
+  text-align: center;
+  margin-bottom: 50px;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.expert-system__title {
+  font-size: 2.8em;
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.expert-system__subtitle {
+  font-size: 1.1em;
+  color: #555;
+  line-height: 1.6;
+}
+
+.expert-system__card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: expertSlideUp 0.5s ease-out;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.expert-system__cardHeader {
+  background: linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%);
+  padding: 30px;
+  color: white;
+  text-align: center;
+}
+
+.expert-system__stepLabel {
+  font-size: 1.2em;
+  opacity: 0.9;
+  margin-bottom: 10px;
+  color: white;
+  font-weight: 600;
+}
+
+.expert-system__nodeTitle {
+  font-size: 1.8em;
+  margin: 0;
+  font-weight: 600;
+  color: white;
+}
+
+.expert-system__cardBody {
+  padding: 40px 30px;
+}
+
+.expert-system__questionText {
+  font-size: 1.1em;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.expert-system__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expert-option-btn {
+  padding: 16px 20px;
+  font-size: 1em;
+  border: 2px solid #5e72e4;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  color: #2c3e50;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.expert-option-btn span {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.expert-option-btn:hover {
+  border-color: #3d5fd3;
+  background: linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%);
+  color: white;
+  transform: translateX(8px);
+  box-shadow: 0 4px 12px rgba(94, 114, 228, 0.3);
+}
+
+.expert-option-btn:active {
+  transform: translateX(6px);
+}
+
+.expert-system__result {
+  background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f8 100%);
+  padding: 30px;
+  border-radius: 16px;
+  border: 2px solid #e9ecf1;
+}
+
+.expert-system__resultTitle {
+  font-size: 1.5em;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.expert-system__recs {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+}
+
+.expert-system__rec {
+  padding: 12px 0 12px 30px;
+  position: relative;
+  line-height: 1.6;
+  color: #555;
+  font-size: 1em;
+}
+
+.expert-system__rec:not(:last-child) {
+  border-bottom: 1px solid #dae3ef;
+}
+
+.expert-system__recCheck {
+  position: absolute;
+  left: 0;
+  color: #5e72e4;
+  font-weight: bold;
+}
+
+.expert-system__safety {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #fff3cd;
+  margin-top: 25px;
+}
+
+.expert-system__safetyText {
+  margin: 0;
+  font-size: 0.95em;
+  line-height: 1.7;
+  color: #333;
+}
+
+.expert-system__safetyIcon {
+  font-size: 1.3em;
+  margin-right: 10px;
+}
+
+.expert-system__hotline112 {
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.expert-system__hotlineOther {
+  color: #5e72e4;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.expert-system__footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 30px;
+  border-top: 1px solid #e9ecf1;
+  justify-content: flex-end;
+}
+
+.expert-system__btnBack {
+  padding: 12px 24px;
+  font-size: 0.95em;
+  border: 2px solid #e0e6f0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  color: #2c3e50;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.expert-system__btnBack:hover:not(:disabled) {
+  background: #f0f3ff;
+  border-color: #5e72e4;
+}
+
+.expert-system__btnBack:disabled {
+  cursor: not-allowed;
+  color: #ccc;
+  opacity: 0.5;
+}
+
+.expert-system__btnReset {
+  padding: 12px 24px;
+  font-size: 0.95em;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5e72e4 0%, #3d5fd3 100%);
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.expert-system__btnReset:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(94, 114, 228, 0.4);
+}

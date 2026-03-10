@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS Schranka_dovery (
     anonymne BOOLEAN DEFAULT false,
     publikovatelne BOOLEAN DEFAULT false,
     zverejnene BOOLEAN DEFAULT false,
+    videne_psychologom BOOLEAN NOT NULL DEFAULT false,
+    videne_uzivatelom BOOLEAN NOT NULL DEFAULT true,
     odpoved VARCHAR(1000),
     datum_pridania TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id_psychologicky INT REFERENCES Psychologicka(id_psychologicky) ON DELETE SET NULL,
@@ -76,10 +78,15 @@ CREATE TABLE IF NOT EXISTS Rezervacia_sedeni (
     cas_do TIME NOT NULL,
     stav VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (stav IN ('pending', 'potvrdena', 'zrusena', 'dokoncena')),
     poznamka VARCHAR(500),
+        videne_psychologom BOOLEAN NOT NULL DEFAULT false,
     id_psychologicky INT NOT NULL REFERENCES Psychologicka(id_psychologicky) ON DELETE RESTRICT,
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,
     UNIQUE(datum, cas_od, id_psychologicky)
 );
+
+-- -- Migrácia pre existujúce DB (ak tabuľka už existuje)
+-- ALTER TABLE IF EXISTS Rezervacia_sedeni
+--     ADD COLUMN IF NOT EXISTS videne_psychologom BOOLEAN NOT NULL DEFAULT false;
 
 -- Tabuľka časových slotov (pre psychológa)
 CREATE TABLE IF NOT EXISTS Cas_slot (

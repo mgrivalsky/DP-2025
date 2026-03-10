@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import { Navigation } from "./components/navigation";
-import { NavigationMain } from "./components/navigationMain.jsx";
-import { Header } from "./components/header";
-import { HeaderMain } from "./components/headerMain";
-import { Features } from "./components/features";
-import { About } from "./components/about";
-import { Services } from "./components/services";
-import { Gallery } from "./components/gallery";
-import { Testimonials } from "./components/testimonials";
-import { Testimonials2 } from "./components/testimonials2";
-import { News } from "./components/news";
-import { Contact } from "./components/contact";
-import LoginPage from "./components/LoginPage";
-import ReservationSystem from "./components/ReservationSystem";
-import QuickHelp from "./components/QuickHelp";
-import Expert from "./components/Expert.js";
-import ChatIconButton from "./components/ChatIconButton";
-import { UserDashboard } from "./components/UserDashboard";
-import { AdminDashboard } from "./components/AdminDashboard";
-import UserHistory from "./components/UserHistory";
-import { Chat } from "./components/Chat";
-import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
+// Public components (landing page)
+import { Navigation } from "./components/public/navigation";
+import { Header } from "./components/public/header";
+import { About } from "./components/public/about";
+import { Services } from "./components/public/services";
+import { Gallery } from "./components/public/gallery";
+import { TrustBox } from "./components/public/TrustBox";
+import { Contact } from "./components/public/contact";
+
+// User components (authenticated users)
+import { NavigationMain } from "./components/user/navigationMain.jsx";
+import { HeaderMain } from "./components/user/headerMain";
+import { UserTrustBox } from "./components/user/UserTrustBox";
+import { News } from "./components/user/news";
+import ReservationSystem from "./components/user/ReservationSystem";
+import QuickHelp from "./components/user/QuickHelp";
+import Expert from "./components/user/Expert.js";
+import ChatIconButton from "./components/user/ChatIconButton";
+import PsychologChatFloating from "./components/admin/PsychologChatFloating";
+import PsychologChat from "./components/admin/PsychologChat";
+import UserHistory from "./components/user/UserHistory";
+import { Chat } from "./components/user/Chat";
+
+// Admin components
+import Admin from "./components/admin/Admin";
+
+// Auth components
+import LoginPage from "./components/auth/LoginPage";
+import { ProtectedRoute, PublicRoute } from "./components/auth/ProtectedRoute";
+
 import { AuthProvider } from "./context/AuthContext";
 
 import SmoothScroll from "smooth-scroll";
@@ -40,7 +48,7 @@ const LandingPage = ({ data }) => (
     <Header data={data.Header} />
     <About data={data.About} />
     <Services data={data.Services} />
-    <Testimonials data={data.Testimonials} />
+    <TrustBox data={data.TrustBox} />
     <Gallery data={data.Gallery} />
     <Contact data={data.Contact} />
   </>
@@ -51,7 +59,7 @@ const MainPage = ({ data }) => (
     <NavigationMain />
     <HeaderMain data={data.HeaderMain} />
     <News data={data.News} />
-    <Testimonials2 data={data.Testimonials2} />
+    <UserTrustBox data={data.UserTrustBox} />
     <QuickHelp data={data.QuickHelp} />
     <ReservationSystem data={data.ReservationSystem} />
     <Expert data={data.expert} />
@@ -99,7 +107,7 @@ const App = () => {
             path="/admin" 
             element={
               <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
+                <Admin />
               </ProtectedRoute>
             } 
           />

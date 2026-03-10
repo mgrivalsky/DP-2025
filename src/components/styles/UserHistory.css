@@ -1,0 +1,262 @@
+/* UserHistory page-specific styles (moved from inline JSX) */
+
+.user-history__page {
+  padding-top: 90px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #608dfd 0%, #5ca9fb 100%);
+  padding: 32px 16px;
+}
+
+.user-history__container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.user-history__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.user-history__title {
+  margin: 0;
+  font-size: 2rem;
+  color: #1f2d3d;
+}
+
+.user-history__subtitle {
+  margin: 6px 0 0;
+  color: #5c6b7a;
+}
+
+.user-history__headerRight {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.user-history__userName {
+  color: #1f2d3d;
+  font-weight: 700;
+}
+
+.user-history__logoutBtn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #dfe4ec;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.user-history__loadingCard {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.user-history__error {
+  background: #fdecea;
+  color: #a02721;
+  border: 1px solid #f5c6cb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.user-history__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 22px;
+}
+
+.user-history__card {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  border: 1px solid #e6ebf2;
+}
+
+.user-history__cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.user-history__cardTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1f2d3d;
+}
+
+.user-history__cardCount {
+  color: #4055b5;
+  font-weight: 700;
+}
+
+.user-history__empty {
+  color: #6c7a89;
+  margin: 0;
+}
+
+.user-history__sectionInfo {
+  margin: 0 0 12px;
+  color: #5c6b7a;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.user-history__list {
+  display: grid;
+  gap: 12px;
+}
+
+.user-history__itemRow {
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.user-history__itemRow--confirmed {
+  border: 2px solid #f54339;
+}
+
+.user-history__itemTitle {
+  font-weight: 700;
+  color: #1f2d3d;
+  margin-bottom: 6px;
+}
+
+.user-history__itemMeta {
+  display: flex;
+  gap: 10px;
+  color: #4d5b7c;
+  font-size: 0.95em;
+}
+
+.user-history__itemRight {
+  text-align: right;
+}
+
+.user-history__status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.user-history__status--pending {
+  color: #5c6b7a;
+  background: #f1f3f7;
+}
+
+.user-history__status--ok,
+.user-history__status--resolved {
+  color: #0f5132;
+  background: #d1f1df;
+}
+
+.user-history__status--rejected {
+  color: #a02721;
+  background: #fdecea;
+}
+
+.user-history__psycholog {
+  color: #7f8c8d;
+  font-size: 0.85em;
+  margin-top: 6px;
+}
+
+.user-history__trustItem {
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.user-history__trustHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-history__trustCategory {
+  font-weight: 700;
+  color: #1f2d3d;
+}
+
+.user-history__trustBadges {
+  display: flex;
+  gap: 8px;
+}
+
+.user-history__trustSeenBtn {
+  border: 1px solid #dfe4ec;
+  background: #fff;
+  color: #1f2d3d;
+  border-radius: 999px;
+  width: 34px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+}
+
+.user-history__badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.user-history__badge--anonymous {
+  color: #5a3e1b;
+  background: #f5ebde;
+}
+
+.user-history__badge--publishable {
+  color: #4055b5;
+  background: #e7eafe;
+}
+
+.user-history__badge--notPublishable {
+  color: #5c6b7a;
+  background: #eef1f5;
+}
+
+.user-history__trustText {
+  color: #4d5b7c;
+  font-size: 0.97em;
+  line-height: 1.6;
+}
+
+.user-history__trustAnswer {
+  background: #f4f8ff;
+  border: 1px solid #d9e6ff;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.user-history__trustAnswerTitle {
+  font-weight: 700;
+  color: #1f2d3d;
+  margin-bottom: 4px;
+}
+
+.user-history__trustAnswerText {
+  color: #4d5b7c;
+  line-height: 1.5;
+}

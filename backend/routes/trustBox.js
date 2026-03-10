@@ -5,6 +5,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
+const isUser = (role) => !isPsycholog(role);
 
 // Ensure publish column exists (safe for existing DBs)
 pool.query(
@@ -12,6 +13,39 @@ pool.query(
    ADD COLUMN IF NOT EXISTS zverejnene BOOLEAN DEFAULT false`
 ).catch((err) => {
   console.error('Error ensuring zverejnene column:', err);
+});
+
+// Ensure seen-by-psychologist column exists (safe for existing DBs)
+pool.query(
+  `ALTER TABLE Schranka_dovery
+   ADD COLUMN IF NOT EXISTS videne_psychologom BOOLEAN NOT NULL DEFAULT false`
+).catch((err) => {
+  console.error('Error ensuring videne_psychologom column:', err);
+});
+
+// Ensure seen-by-user column exists (safe for existing DBs)
+pool.query(
+  `ALTER TABLE Schranka_dovery
+   ADD COLUMN IF NOT EXISTS videne_uzivatelom BOOLEAN NOT NULL DEFAULT true`
+).catch((err) => {
+  console.error('Error ensuring videne_uzivatelom column:', err);
+});
+
+// Normalize legacy rows (in case the column existed with NULLs)
+pool.query(
+  `UPDATE Schranka_dovery
+   SET videne_psychologom = false
+   WHERE videne_psychologom IS NULL`
+).catch((err) => {
+  console.error('Error normalizing videne_psychologom NULLs:', err);
+});
+
+pool.query(
+  `UPDATE Schranka_dovery
+   SET videne_uzivatelom = true
+   WHERE videne_uzivatelom IS NULL`
+).catch((err) => {
+  console.error('Error normalizing videne_uzivatelom NULLs:', err);
 });
 
 // Submit a trust box message
@@ -39,10 +73,10 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     const insert = await pool.query(
-      `INSERT INTO Schranka_dovery (kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologicky)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, stav, id_uzivatela, id_psychologicky, datum_pridania` ,
-      [kategoria, obsah_prispevku, anonymne, publikovatelne, authedUserId, id_psychologicky]
+      `INSERT INTO Schranka_dovery (kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologicky, videne_psychologom, videne_uzivatelom)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, videne_psychologom, videne_uzivatelom, stav, id_uzivatela, id_psychologicky, datum_pridania` ,
+      [kategoria, obsah_prispevku, anonymne, publikovatelne, authedUserId, id_psychologicky, false, true]
     );
 
     return res.status(201).json(insert.rows[0]);
@@ -57,7 +91,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     if (isPsycholog(req.user?.role)) {
       const result = await pool.query(
-        `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.odpoved, sd.stav,
+        `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.videne_psychologom, sd.videne_uzivatelom, sd.odpoved, sd.stav,
           sd.id_uzivatela, sd.id_psychologicky, sd.datum_pridania,
           CONCAT(u.meno, ' ', u.priezvisko) AS uzivatel_meno
         FROM Schranka_dovery sd
@@ -68,7 +102,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.odpoved, sd.stav,
+      `SELECT sd.id_prispevku, sd.kategoria, sd.obsah_prispevku, sd.anonymne, sd.publikovatelne, sd.zverejnene, sd.videne_psychologom, sd.videne_uzivatelom, sd.odpoved, sd.stav,
               sd.id_uzivatela, sd.id_psychologicky, sd.datum_pridania
        FROM Schranka_dovery sd
        WHERE sd.id_uzivatela = $1
@@ -82,6 +116,141 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Unseen trust box count (psycholog/admin)
+router.get('/unseen-count', authenticateToken, async (req, res) => {
+  try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Schranka_dovery
+       WHERE COALESCE(videne_psychologom, false) = false`
+    );
+    return res.json({ count: result.rows[0]?.count || 0 });
+  } catch (error) {
+    console.error('Unseen trust box count error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// Unseen replies count for a user (videne_uzivatelom = false)
+router.get('/user/:userId/unseen-count', authenticateToken, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ error: 'userId je povinné' });
+    }
+
+    if (!isUser(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+    if (Number(userId) !== Number(req.user?.id)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Schranka_dovery
+       WHERE id_uzivatela = $1
+         AND COALESCE(videne_uzivatelom, true) = false`,
+      [userId]
+    );
+
+    return res.json({ count: result.rows[0]?.count || 0 });
+  } catch (error) {
+    console.error('Unseen trust box (user) count error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// Mark all trust box items as seen (psycholog/admin)
+router.put('/mark-seen', authenticateToken, async (req, res) => {
+  try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    await pool.query(
+      `UPDATE Schranka_dovery
+       SET videne_psychologom = true
+       WHERE COALESCE(videne_psychologom, false) = false`
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Mark trust box seen error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// Mark a single trust box item as seen (psycholog/admin)
+router.put('/:id/mark-seen', authenticateToken, async (req, res) => {
+  try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const id = parseInt(req.params.id, 10);
+    if (!id) {
+      return res.status(400).json({ error: 'id je povinné' });
+    }
+
+    const update = await pool.query(
+      `UPDATE Schranka_dovery
+          SET videne_psychologom = true
+        WHERE id_prispevku = $1
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, videne_psychologom, videne_uzivatelom, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+      [id]
+    );
+
+    if (update.rowCount === 0) {
+      return res.status(404).json({ error: 'Správa nenájdená' });
+    }
+
+    return res.json(update.rows[0]);
+  } catch (error) {
+    console.error('Mark single trust box seen error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
+// Mark a trust box item as seen by its owner user
+router.put('/:id/mark-seen-user', authenticateToken, async (req, res) => {
+  try {
+    if (!isUser(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const id = parseInt(req.params.id, 10);
+    if (!id) {
+      return res.status(400).json({ error: 'id je povinné' });
+    }
+
+    const authedUserId = Number(req.user?.id);
+    if (!authedUserId) {
+      return res.status(401).json({ error: 'Prihlásenie je povinné' });
+    }
+
+    const update = await pool.query(
+      `UPDATE Schranka_dovery
+          SET videne_uzivatelom = true
+        WHERE id_prispevku = $1 AND id_uzivatela = $2
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, videne_psychologom, videne_uzivatelom, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+      [id, authedUserId]
+    );
+
+    if (update.rowCount === 0) {
+      return res.status(404).json({ error: 'Správa nenájdená' });
+    }
+
+    return res.json(update.rows[0]);
+  } catch (error) {
+    console.error('Mark trust box seen by user error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
 // Add / update answer or content for a message - CHRÁNENÉ TOKENOM
 router.patch('/:id', authenticateToken, async (req, res) => {
   try {
@@ -92,15 +261,18 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     const id = req.params.id;
     const id_psychologicky = 1; // fixed assignment per requirement
 
+    const shouldMarkUnseenByUser = typeof odpoved !== 'undefined';
+
     const update = await pool.query(
       `UPDATE Schranka_dovery
           SET odpoved = COALESCE($1, odpoved),
               obsah_prispevku = COALESCE($2, obsah_prispevku),
               stav = 'vyriesene',
-              id_psychologicky = $4
+              id_psychologicky = $4,
+              videne_uzivatelom = CASE WHEN $5 THEN false ELSE videne_uzivatelom END
         WHERE id_prispevku = $3
-        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
-      [odpoved ?? '', obsah_prispevku ?? null, id, id_psychologicky]
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, videne_psychologom, videne_uzivatelom, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+      [odpoved ?? '', obsah_prispevku ?? null, id, id_psychologicky, shouldMarkUnseenByUser]
     );
 
     if (update.rowCount === 0) {
@@ -126,7 +298,7 @@ router.patch('/:id/publish', authenticateToken, async (req, res) => {
       `UPDATE Schranka_dovery
           SET zverejnene = true
         WHERE id_prispevku = $1 AND publikovatelne = true
-        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, videne_psychologom, videne_uzivatelom, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
       [id]
     );
 
@@ -153,7 +325,7 @@ router.patch('/:id/unpublish', authenticateToken, async (req, res) => {
       `UPDATE Schranka_dovery
           SET zverejnene = false
         WHERE id_prispevku = $1
-        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
+        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, videne_psychologom, videne_uzivatelom, odpoved, stav, id_uzivatela, id_psychologicky, datum_pridania`,
       [id]
     );
 
