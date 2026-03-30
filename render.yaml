@@ -5,6 +5,7 @@ services:
   - type: web
     name: e-psycholog-api
     env: docker
+    plan: free
     rootDir: backend
     dockerfilePath: Dockerfile
     autoDeploy: true
