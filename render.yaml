@@ -33,7 +33,7 @@ services:
           name: e-psycholog-db
           property: connectionString
 
-  - type: static
+  - type: static_site
     name: e-psycholog-web
     buildCommand: npm ci && npm run build
     staticPublishPath: build
