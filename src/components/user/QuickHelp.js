@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { MessageCircle, Send } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { getSocket } from "../../utils/socket";
 import "../styles/QuickHelp.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
-const POLL_INTERVAL = 2000; // Poll for new messages every 2 seconds
 
 const QuickHelp = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, token, fetchWithAuth } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [chatId, setChatId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [psychologOnline, setPsychologOnline] = useState(true);
+  const [psychologOnline, setPsychologOnline] = useState(false);
   const messagesContainerRef = useRef(null);
   const lastMessageLengthRef = useRef(0);
+  const socketRef = useRef(null);
+  const seenMessageIdsRef = useRef(new Set());
 
   // Auto-scroll to latest message only when new message arrives
   useEffect(() => {
@@ -39,27 +41,69 @@ const QuickHelp = () => {
     initializeChat();
   }, [user?.id]);
 
-  // Poll for new messages
+  // Socket.io connection + listeners (no polling)
   useEffect(() => {
-    if (!chatId || !isOpen) return;
+    if (!token || !isOpen) return;
 
-    const pollMessages = async () => {
-      try {
-        const response = await fetchWithAuth(`${API_BASE}/api/chat/${chatId}/messages`);
-        if (!response.ok) throw new Error("Failed to load messages");
-        const data = await response.json();
-        setMessages(data || []);
+    const sock = getSocket(token);
+    if (!sock) return;
+    socketRef.current = sock;
 
-        // Do not mark messages as seen from user view
-      } catch (err) {
-        console.error("Error polling messages:", err);
+    const onMessage = (payload) => {
+      if (!payload) return;
+      if (!chatId) return;
+      if (Number(payload.id_chatu) !== Number(chatId)) return;
+
+      const msgId = payload.id_spravy;
+      if (msgId) {
+        if (seenMessageIdsRef.current.has(msgId)) return;
+        seenMessageIdsRef.current.add(msgId);
       }
+
+      setMessages((prev) => [...prev, payload]);
     };
 
-    pollMessages();
-    const interval = setInterval(pollMessages, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [chatId, isOpen, fetchWithAuth]);
+    const onPsychologStatus = (data) => {
+      if (Number(data?.id) === 1) setPsychologOnline(Boolean(data?.online));
+    };
+
+    sock.on('message', onMessage);
+    sock.on('psychologStatus', onPsychologStatus);
+
+    return () => {
+      sock.off('message', onMessage);
+      sock.off('psychologStatus', onPsychologStatus);
+    };
+  }, [token, isOpen, chatId]);
+
+  // Join chat room when chatId is ready
+  useEffect(() => {
+    if (!isOpen || !chatId) return;
+    const sock = socketRef.current;
+    if (!sock) return;
+    sock.emit('joinChat', { chatId });
+  }, [isOpen, chatId]);
+
+  // Load initial psychologist online status once (then realtime updates)
+  useEffect(() => {
+    if (!user?.id || !isOpen) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetchWithAuth(`${API_BASE}/api/chat/psycholog/1/status`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!cancelled) setPsychologOnline(Boolean(data?.online));
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, isOpen, fetchWithAuth]);
 
   const initializeChat = async () => {
     try {
@@ -90,7 +134,13 @@ const QuickHelp = () => {
       const messagesResponse = await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
       if (messagesResponse.ok) {
         const messagesData = await messagesResponse.json();
-        setMessages(messagesData || []);
+        const initial = messagesData || [];
+        const nextSet = new Set();
+        for (const m of initial) {
+          if (m?.id_spravy) nextSet.add(m.id_spravy);
+        }
+        seenMessageIdsRef.current = nextSet;
+        setMessages(initial);
       }
     } catch (err) {
       console.error("Error initializing chat:", err);
@@ -107,11 +157,16 @@ const QuickHelp = () => {
     setNewMessage("");
 
     try {
+      const sock = socketRef.current;
+      if (sock && sock.connected) {
+        sock.emit('sendMessage', { chatId, obsah: msgToSend });
+        return;
+      }
+
+      // Fallback to REST if socket is not connected.
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${chatId}/message`, {
         method: "POST",
-        body: JSON.stringify({
-          obsah: msgToSend,
-        }),
+        body: JSON.stringify({ obsah: msgToSend }),
       });
 
       if (!response.ok) {
@@ -120,6 +175,7 @@ const QuickHelp = () => {
       }
 
       const message = await response.json();
+      if (message?.id_spravy) seenMessageIdsRef.current.add(message.id_spravy);
       setMessages((prev) => [...prev, message]);
     } catch (err) {
       console.error("Error sending message:", err);
@@ -152,7 +208,7 @@ const QuickHelp = () => {
           <div className="chat-box">
             <div className="chat-header">
               <div className="chat-status">
-                <div className="quickhelp-status-dot"></div>
+                <div className={`quickhelp-status-dot ${psychologOnline ? 'online' : 'offline'}`}></div>
                 <span>Pani psychologička – {loading ? "pripája sa..." : psychologOnline ? "online" : "offline"}</span>
               </div>
               <button className="chat-close" onClick={() => setIsOpen(false)}>

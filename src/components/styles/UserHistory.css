@@ -146,6 +146,38 @@
   text-align: right;
 }
 
+.user-history__cancelBtn {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid #f5c6cb;
+  background: white;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #a02721;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.user-history__cancelBtn:hover {
+  background: #fdecea;
+  border-color: #f5c6cb;
+}
+
+.user-history__cancelBtn:active {
+  transform: translateY(1px);
+}
+
+.user-history__cancelBtn:focus-visible {
+  outline: 2px solid #f54339;
+  outline-offset: 2px;
+}
+
+.user-history__cancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .user-history__status {
   display: inline-block;
   padding: 4px 10px;
@@ -154,7 +186,8 @@
   font-weight: 700;
 }
 
-.user-history__status--pending {
+.user-history__status--pending,
+.user-history__status--vytvorena {
   color: #5c6b7a;
   background: #f1f3f7;
 }

@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { NavigationMain } from './navigationMain';
 import '../styles/Chat.css';
+import { getSocket } from '../../utils/socket';
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
-const POLL_INTERVAL = 2000; // Poll for new messages every 2 seconds
 
 export const Chat = () => {
-  const { user, fetchWithAuth } = useAuth();
-  const navigate = useNavigate();
+  const { user, token, fetchWithAuth } = useAuth();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -19,6 +17,9 @@ export const Chat = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const messagesContainerRef = useRef(null);
   const lastMessageLengthRef = useRef(0);
+  const socketRef = useRef(null);
+  const selectedChatRef = useRef(null);
+  const seenMessageIdsRef = useRef(new Set());
 
   // Auto-scroll to latest message only when new message arrives
   useEffect(() => {
@@ -53,8 +54,6 @@ export const Chat = () => {
     if (!user?.id) return;
     setInitialLoading(true);
     loadChats().finally(() => setInitialLoading(false));
-    const interval = setInterval(loadChats, POLL_INTERVAL);
-    return () => clearInterval(interval);
   }, [user?.id, fetchWithAuth]);
 
   const loadChats = async () => {
@@ -79,7 +78,66 @@ export const Chat = () => {
     }
   };
 
-  // Load messages for selected chat with polling
+  // Keep ref in sync for socket handlers
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  // Socket.io connection + listeners (no polling)
+  useEffect(() => {
+    if (!token) return;
+    const sock = getSocket(token);
+    if (!sock) return;
+    socketRef.current = sock;
+
+    const onMessage = (payload) => {
+      const currentChatId = selectedChatRef.current?.id_chatu;
+      if (!currentChatId) return;
+      if (!payload) return;
+      if (Number(payload.id_chatu) !== Number(currentChatId)) return;
+
+      const msgId = payload.id_spravy;
+      if (msgId) {
+        if (seenMessageIdsRef.current.has(msgId)) return;
+        seenMessageIdsRef.current.add(msgId);
+      }
+
+      setMessages((prev) => [...prev, payload]);
+      // Refresh sidebar timestamps (no polling)
+      loadChats();
+    };
+
+    const onChatUpdated = (data) => {
+      const currentChatId = selectedChatRef.current?.id_chatu;
+      if (!currentChatId) return;
+      if (Number(data?.chatId) !== Number(currentChatId)) return;
+      loadChats();
+    };
+
+    const onPsychologStatus = (data) => {
+      const psychId = Number(data?.id);
+      if (!psychId) return;
+      setChats((prev) =>
+        (prev || []).map((c) =>
+          Number(c?.id_psychologa) === psychId
+            ? { ...c, psycholog_online: Boolean(data?.online) }
+            : c
+        )
+      );
+    };
+
+    sock.on('message', onMessage);
+    sock.on('chatUpdated', onChatUpdated);
+    sock.on('psychologStatus', onPsychologStatus);
+
+    return () => {
+      sock.off('message', onMessage);
+      sock.off('chatUpdated', onChatUpdated);
+      sock.off('psychologStatus', onPsychologStatus);
+    };
+  }, [token]);
+
+  // Load messages for selected chat (one-time) + join room
   useEffect(() => {
     if (!selectedChat?.id_chatu) return;
 
@@ -91,7 +149,13 @@ export const Chat = () => {
           throw new Error(data.error || 'Failed to load messages');
         }
         const data = await response.json();
-        setMessages(data || []);
+        const initial = data || [];
+        const nextSet = new Set();
+        for (const m of initial) {
+          if (m?.id_spravy) nextSet.add(m.id_spravy);
+        }
+        seenMessageIdsRef.current = nextSet;
+        setMessages(initial);
 
         // Do not mark messages as seen from user view
       } catch (err) {
@@ -100,9 +164,14 @@ export const Chat = () => {
     };
 
     loadMessages();
-    const interval = setInterval(loadMessages, POLL_INTERVAL);
-    return () => clearInterval(interval);
   }, [selectedChat?.id_chatu, fetchWithAuth]);
+
+  useEffect(() => {
+    if (!selectedChat?.id_chatu) return;
+    const sock = socketRef.current;
+    if (!sock) return;
+    sock.emit('joinChat', { chatId: selectedChat.id_chatu });
+  }, [selectedChat?.id_chatu]);
 
   const handleStartChat = async (psychologId) => {
     try {
@@ -147,6 +216,13 @@ export const Chat = () => {
     setError('');
 
     try {
+      const sock = socketRef.current;
+      if (sock && sock.connected) {
+        sock.emit('sendMessage', { chatId: selectedChat.id_chatu, obsah: msgToSend });
+        return;
+      }
+
+      // Fallback to REST if socket is not connected.
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${selectedChat.id_chatu}/message`, {
         method: 'POST',
         body: JSON.stringify({ obsah: msgToSend })
@@ -156,7 +232,9 @@ export const Chat = () => {
         throw new Error(data.error || 'Failed to send message');
       }
       const message = await response.json();
-      setMessages([...messages, message]);
+      if (message?.id_spravy) seenMessageIdsRef.current.add(message.id_spravy);
+      setMessages((prev) => [...prev, message]);
+      loadChats();
     } catch (err) {
       console.error(err);
       setError('Chyba pri odoslaní správy: ' + err.message);
@@ -220,8 +298,11 @@ export const Chat = () => {
                       <strong>
                         {chat.psycholog_meno} {chat.psycholog_priezvisko}
                       </strong>
+                      <small style={{ marginLeft: 8, opacity: 0.85 }}>
+                        {chat.psycholog_online ? 'online' : 'offline'}
+                      </small>
                     </div>
-                    <small>{chat.posledna_zprava ? new Date(chat.posledna_zprava).toLocaleString('sk-SK') : 'Bez správ'}</small>
+                    <small>{chat.posledna_sprava ? new Date(chat.posledna_sprava).toLocaleString('sk-SK') : 'Bez správ'}</small>
                   </div>
                 ))}
               </div>
@@ -241,7 +322,7 @@ export const Chat = () => {
                 <div className="chat-messages" ref={messagesContainerRef}>
                   {messages.map((msg, idx) => (
                     <div
-                      key={idx}
+                      key={msg?.id_spravy || idx}
                       className={`message ${
                         msg.odesilatel_typ === 'uzivatel' ? 'user' : 'psycholog'
                       }`}

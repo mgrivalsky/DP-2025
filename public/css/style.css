@@ -220,6 +220,66 @@ hr {
   transform: translateY(-50%);
 }
 
+/* --- Mobile: stack nav items (no horizontal scrolling) --- */
+@media (max-width: 768px) {
+  .navbar .container {
+    display: block !important;
+  }
+
+  .navbar-header {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  #menu .navbar-collapse {
+    width: 100%;
+  }
+
+  #menu .navbar-nav {
+    display: block !important;
+    flex: none !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  #menu .navbar-nav > li {
+    white-space: normal;
+  }
+
+  #menu.navbar-default .navbar-nav > li > a {
+    display: block !important;
+    margin: 0 !important;
+    padding: 12px 0 !important;
+  }
+
+  #menu.navbar-default .navbar-nav > li > a:after {
+    display: none;
+  }
+
+  .user-section {
+    display: block !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    border-left: none !important;
+  }
+
+  .user-section li {
+    order: initial;
+  }
+
+  .user-section li:last-child {
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
+  }
+
+  #menu.navbar-default .navbar-nav > li > a.nav-user-pill {
+    display: inline-block !important;
+    margin-top: 8px !important;
+  }
+}
+
 .user-name {
   display: inline-block;
   background: linear-gradient(to right, #6372ff 0%, #5ca9fb 100%);

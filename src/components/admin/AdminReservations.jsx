@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchWithToken, API_BASE, toYmd, formatSkDate } from '../../utils/adminHelpers';
 import ConfirmDialog from './ConfirmDialog';
 import '../styles/AdminComponents.css';
+import { getSocket } from '../../utils/socket';
 
 const statusLabel = (stav) => {
-  if (stav === 'pending') return 'Čakajúca';
+  if (stav === 'vytvorena') return 'Vytvorená';
   if (stav === 'potvrdena') return 'Potvrdená';
   if (stav === 'zrusena') return 'Zrušená';
   return 'Dokončená';
@@ -15,11 +16,11 @@ const statusClass = (stav) => {
   if (stav === 'potvrdena') return 'status-badge status-confirmed';
   if (stav === 'zrusena') return 'status-badge status-cancelled';
   if (stav === 'dokoncena') return 'status-badge status-done';
-  return 'status-badge status-pending';
+  return 'status-badge status-vytvorena';
 };
 
 const AdminReservations = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [reservations, setReservations] = useState([]);
   const [reservationMessage, setReservationMessage] = useState('');
   const [reservationLoading, setReservationLoading] = useState(false);
@@ -31,15 +32,54 @@ const AdminReservations = () => {
     cas_od: '',
     cas_do: '',
     poznamka: '',
-    stav: 'pending'
+    stav: 'vytvorena'
   });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, danger: false });
 
+  const inFlightRef = useRef(false);
+  const reservationsRef = useRef(reservations);
+
   useEffect(() => {
-    loadReservations();
+    reservationsRef.current = reservations;
+  }, [reservations]);
+
+  useEffect(() => {
+    loadReservations({ showSpinner: true });
   }, []);
+
+  // Realtime refresh when reservations change (no polling)
+  useEffect(() => {
+    if (!token) return;
+    const sock = getSocket(token);
+    if (!sock) return;
+
+    let timer = null;
+    const onReservationUpdated = (payload) => {
+      const psychId = Number(payload?.psychologId);
+      // Admin view is only for psycholog/admin; keep it simple and refresh on any relevant event.
+      if (psychId && user?.id && Number(user.id) !== psychId) {
+        // If event targets another psychologist, ignore (helps multi-psych setups).
+        return;
+      }
+
+      // Avoid disruptive refresh while editing/creating.
+      if (editingId || showNewReservationForm) return;
+
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        loadReservations({ showSpinner: false });
+      }, 200);
+    };
+
+    sock.on('reservationUpdated', onReservationUpdated);
+    return () => {
+      sock.off('reservationUpdated', onReservationUpdated);
+      if (timer) clearTimeout(timer);
+    };
+  }, [token, user?.id, editingId, showNewReservationForm]);
 
   useEffect(() => {
     if (!reservationMessage) return;
@@ -47,14 +87,20 @@ const AdminReservations = () => {
     return () => clearTimeout(timer);
   }, [reservationMessage]);
 
-  const loadReservations = async () => {
+  const loadReservations = async ({ showSpinner } = {}) => {
     try {
-      setReservationLoading(true);
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+
+      const hasData = Array.isArray(reservationsRef.current) && reservationsRef.current.length > 0;
+      const shouldShowSpinner = showSpinner === true || (!hasData && showSpinner !== false);
+      if (shouldShowSpinner) setReservationLoading(true);
+
       const resp = await fetchWithToken(`${API_BASE}/api/reservations`, token);
       const data = await resp.json();
       if (!resp.ok) {
         setReservationMessage(`Chyba pri načítaní: ${data?.error || 'neznáma'}`);
-        setReservations([]);
+        if (!hasData) setReservations([]);
       } else {
         setReservations(data || []);
         // Preserve success messages while reloading; clear only previous non-success messages.
@@ -63,8 +109,10 @@ const AdminReservations = () => {
     } catch (err) {
       console.error(err);
       setReservationMessage('Chyba pri načítaní rezervácií');
-      setReservations([]);
+      const hasData = Array.isArray(reservationsRef.current) && reservationsRef.current.length > 0;
+      if (!hasData) setReservations([]);
     } finally {
+      inFlightRef.current = false;
       setReservationLoading(false);
     }
   };
@@ -89,7 +137,7 @@ const AdminReservations = () => {
           cas_do, 
           poznamka, 
           stav, 
-          id_psychologicky: 1 
+          id_psychologa: 1 
         })
       });
       const data = await resp.json();
@@ -103,10 +151,10 @@ const AdminReservations = () => {
           cas_od: '',
           cas_do: '',
           poznamka: '',
-          stav: 'pending'
+          stav: 'vytvorena'
         });
         setShowNewReservationForm(false);
-        loadReservations();
+        loadReservations({ showSpinner: false });
       }
     } catch (err) {
       console.error(err);
@@ -126,7 +174,7 @@ const AdminReservations = () => {
       } else {
         setReservationMessage('✅ Rezervácia upravená');
         setEditingId(null);
-        loadReservations();
+        loadReservations({ showSpinner: false });
       }
     } catch (err) {
       console.error(err);
@@ -142,7 +190,7 @@ const AdminReservations = () => {
         setReservationMessage(`Chyba: ${data?.error || 'neznáma'}`);
       } else {
         setReservationMessage('✅ Rezervácia vymazaná');
-        loadReservations();
+        loadReservations({ showSpinner: false });
       }
     } catch (err) {
       console.error(err);
@@ -236,7 +284,7 @@ const AdminReservations = () => {
                 onChange={(e) => setNewReservationForm({ ...newReservationForm, stav: e.target.value })}
                 className="admin-select"
               >
-                <option value="pending">Čakajúca</option>
+                <option value="vytvorena">Vytvorená</option>
                 <option value="potvrdena">Potvrdená</option>
                 <option value="zrusena">Zrušená</option>
                 <option value="dokoncena">Dokončená</option>
@@ -267,7 +315,7 @@ const AdminReservations = () => {
                   cas_od: '',
                   cas_do: '',
                   poznamka: '',
-                  stav: 'pending'
+                  stav: 'vytvorena'
                 });
               }}
             >
@@ -285,14 +333,14 @@ const AdminReservations = () => {
           className="admin-select admin-select-inline"
         >
           <option value="">Všetky</option>
-          <option value="pending">Čakajúca</option>
+          <option value="vytvorena">Vytvorená</option>
           <option value="potvrdena">Potvrdená</option>
           <option value="zrusena">Zrušená</option>
           <option value="dokoncena">Dokončená</option>
         </select>
       </div>
 
-      {reservationLoading ? (
+      {reservationLoading && reservations.length === 0 ? (
         <p>Načítavam rezervácie...</p>
       ) : filteredReservations.length === 0 ? (
         <p>Žiadne rezervácie s vybraným stavom</p>
@@ -348,7 +396,7 @@ const AdminReservations = () => {
                           onChange={e => setEditForm({ ...editForm, stav: e.target.value })}
                           className="admin-select"
                         >
-                          <option value="pending">Čakajúca</option>
+                          <option value="vytvorena">Vytvorená</option>
                           <option value="potvrdena">Potvrdená</option>
                           <option value="zrusena">Zrušená</option>
                           <option value="dokoncena">Dokončená</option>

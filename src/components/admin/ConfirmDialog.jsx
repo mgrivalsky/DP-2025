@@ -1,7 +1,17 @@
 import React from 'react';
 import '../styles/AdminDashboard.css';
 
-const ConfirmDialog = ({ open, title, message, confirmText, cancelText, onConfirm, onCancel, confirmDanger }) => {
+const ConfirmDialog = ({
+  open,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  onConfirm,
+  onCancel,
+  confirmDanger,
+  dismissOnOverlayClick = false,
+}) => {
   if (!open) return null;
 
   const dialogTitle = title || 'Potvrdenie';
@@ -10,13 +20,17 @@ const ConfirmDialog = ({ open, title, message, confirmText, cancelText, onConfir
   const messageId = 'admin-confirm-message';
 
   return (
-    <div className="admin-confirm-overlay">
+    <div
+      className="admin-confirm-overlay"
+      onClick={dismissOnOverlayClick ? onCancel : undefined}
+    >
       <div
         className="admin-confirm-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={messageId}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="admin-confirm-header">
           <span className="admin-confirm-icon" aria-hidden="true">

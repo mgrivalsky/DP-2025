@@ -21,7 +21,7 @@ router.post('/step4', async (req, res) => {
     }
 
     // Tento log je viazaný na FK do Uzivatel, preto nepovoľujeme psycholog token
-    // (psycholog je v tabuľke Psychologicka, nie Uzivatel).
+    // (psycholog je v tabuľke Psycholog, nie Uzivatel).
     if (role === 'psycholog') {
       return res.status(403).json({ error: 'Endpoint nie je určený pre psychológa' });
     }

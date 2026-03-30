@@ -57,7 +57,7 @@ const AdminOverview = () => {
 
   const stats = {
     totalUsers: 862,
-    activeReservations: reservations.filter(r => r.stav === 'pending' || r.stav === 'potvrdena').length,
+    activeReservations: reservations.filter(r => r.stav === 'vytvorena' || r.stav === 'potvrdena').length,
     pendingRequests: slots.filter(s => s.volny).length,
     completedSessions: reservations.filter(r => r.stav === 'dokoncena').length
   };
@@ -93,7 +93,7 @@ const AdminOverview = () => {
     return reservations
       .filter(r => {
         const d = parseLocalDate(r.datum);
-        return (r.stav === 'pending' || r.stav === 'potvrdena') && d && d >= today;
+        return (r.stav === 'vytvorena' || r.stav === 'potvrdena') && d && d >= today;
       })
       .sort((a, b) => {
         const dateA = parseLocalDate(a.datum) || new Date(0);

@@ -58,7 +58,7 @@ const AdminSlots = () => {
     try {
       const resp = await fetchWithToken(`${API_BASE}/api/cas-slots`, token, {
         method: 'POST',
-        body: JSON.stringify({ id_psychologicky: 1, datum, cas_od, cas_do, volny })
+        body: JSON.stringify({ id_psychologa: 1, datum, cas_od, cas_do, volny })
       });
       const data = await resp.json();
       if (!resp.ok) {

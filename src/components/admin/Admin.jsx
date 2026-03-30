@@ -12,6 +12,7 @@ import AdminPreview from './AdminPreview';
 import PsychologChat from './PsychologChat';
 import PsychologChatFloating from './PsychologChatFloating';
 import '../styles/AdminDashboard.css';
+import { getSocket } from '../../utils/socket';
 
 export const Admin = () => {
   const { user, logout, token } = useAuth();
@@ -128,15 +129,70 @@ export const Admin = () => {
     loadChatUnreadTotal();
     loadReservationUnreadTotal();
     loadTrustBoxUnreadTotal();
-    const chatInterval = setInterval(loadChatUnreadTotal, 3000);
-    const resInterval = setInterval(loadReservationUnreadTotal, 50000);
-    const trustInterval = setInterval(loadTrustBoxUnreadTotal, 50000);
-    return () => {
-      clearInterval(chatInterval);
-      clearInterval(resInterval);
-      clearInterval(trustInterval);
-    };
   }, [user?.id]);
+
+  // Local fallback refresh (e.g., after mark-seen REST) in case socket event is missed.
+  useEffect(() => {
+    const handler = () => {
+      loadChatUnreadTotal();
+    };
+    window.addEventListener('admin:refresh-chat-unread', handler);
+    return () => window.removeEventListener('admin:refresh-chat-unread', handler);
+  }, [user?.id]);
+
+  // Realtime badge refresh (no polling)
+  useEffect(() => {
+    if (!user?.id || !token) return;
+    const sock = getSocket(token);
+    if (!sock) return;
+
+    let chatTimer = null;
+    let resTimer = null;
+    let trustTimer = null;
+
+    const scheduleChatRefresh = () => {
+      if (chatTimer) return;
+      chatTimer = setTimeout(() => {
+        chatTimer = null;
+        loadChatUnreadTotal();
+      }, 200);
+    };
+
+    const scheduleResRefresh = (payload) => {
+      // If server specifies a psychologistId, ignore events for other psychologists.
+      const psychId = Number(payload?.psychologId);
+      if (psychId && Number(user.id) !== psychId) return;
+      if (resTimer) return;
+      resTimer = setTimeout(() => {
+        resTimer = null;
+        loadReservationUnreadTotal();
+      }, 200);
+    };
+
+    const scheduleTrustRefresh = () => {
+      if (trustTimer) return;
+      trustTimer = setTimeout(() => {
+        trustTimer = null;
+        loadTrustBoxUnreadTotal();
+      }, 200);
+    };
+
+    sock.on('message', scheduleChatRefresh);
+    sock.on('chatUpdated', scheduleChatRefresh);
+    sock.on('reservationUpdated', scheduleResRefresh);
+    sock.on('trustBoxUpdated', scheduleTrustRefresh);
+
+    return () => {
+      sock.off('message', scheduleChatRefresh);
+      sock.off('chatUpdated', scheduleChatRefresh);
+      sock.off('reservationUpdated', scheduleResRefresh);
+      sock.off('trustBoxUpdated', scheduleTrustRefresh);
+
+      if (chatTimer) clearTimeout(chatTimer);
+      if (resTimer) clearTimeout(resTimer);
+      if (trustTimer) clearTimeout(trustTimer);
+    };
+  }, [user?.id, token]);
 
   // Reservations: option A — opening the tab marks all as seen.
   // TrustBox: stays per-item (no auto mark on tab open).

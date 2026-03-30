@@ -9,6 +9,20 @@ router.use(authenticateToken);
 const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
 
+function emitReservationUpdate(req, psychologId) {
+  try {
+    const io = req.app?.get('io');
+    if (!io) return;
+    const id = Number(psychologId);
+    if (id) {
+      io.to(`psycholog:${id}`).emit('reservationUpdated', { psychologId: id });
+    }
+    io.to('role:psycholog').emit('reservationUpdated', { psychologId: id || null });
+  } catch {
+    // ignore
+  }
+}
+
 // Rezervácie sú chránené tokenom. Užívateľ vidí iba svoje záznamy.
 
 // Pomocná funkcia na zistenie id_uzivatela
@@ -26,7 +40,8 @@ async function resolveUserId({ id_uzivatela, email }) {
 // 1) Vytvorenie rezervácie
 router.post('/', async (req, res) => {
   try {
-    const { datum, cas_od, cas_do, poznamka, id_psychologicky, id_uzivatela, email, stav } = req.body;
+    const { datum, cas_od, cas_do, poznamka, id_psychologa, id_uzivatela, email, stav } = req.body;
+    const psychologId = id_psychologa;
 
     if (!datum || !cas_od) {
       return res.status(400).json({ error: 'Chýba povinné pole: datum alebo cas_od' });
@@ -38,7 +53,7 @@ router.post('/', async (req, res) => {
     if (!userId) return res.status(400).json({ error: 'Nedá sa určiť užívateľ (zadajte id_uzivatela alebo email)' });
 
     const result = await pool.query(
-      `INSERT INTO Rezervacia_sedeni (datum, cas_od, cas_do, poznamka, id_psychologicky, id_uzivatela, stav, videne_psychologom)
+      `INSERT INTO Rezervacia_sedeni (datum, cas_od, cas_do, poznamka, id_psychologa, id_uzivatela, stav, videne_psychologom)
        VALUES ($1, $2, $3, $4, $5, $6, $7, false)
        RETURNING id_sedenia,
                  datum::text AS datum,
@@ -47,14 +62,16 @@ router.post('/', async (req, res) => {
                  stav,
                  poznamka,
                  videne_psychologom,
-                 id_psychologicky,
+                 id_psychologa,
                  id_uzivatela`,
-      [datum, cas_od, cas_do || cas_od, poznamka || null, id_psychologicky || 1, userId, stav || 'pending']
+      [datum, cas_od, cas_do || cas_od, poznamka || null, psychologId || 1, userId, stav || 'vytvorena']
     );
 
-    res.status(201).json({ message: 'OK', reservation: result.rows[0] });
+    const created = result.rows[0];
+    emitReservationUpdate(req, created?.id_psychologa);
+    res.status(201).json({ message: 'OK', reservation: created });
   } catch (error) {
-    // Zachyť porušenie unikátneho indexu na (datum, cas_od, id_psychologicky)
+    // Zachyť porušenie unikátneho indexu na (datum, cas_od, id_psychologa)
     if (error?.code === '23505') {
       return res.status(409).json({ error: 'Tento termín je už obsadený' });
     }
@@ -79,7 +96,7 @@ router.get('/psycholog/:psychologId/unseen-count', async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT COUNT(*)::int AS count FROM Rezervacia_sedeni WHERE id_psychologicky = $1 AND videne_psychologom = false',
+      'SELECT COUNT(*)::int AS count FROM Rezervacia_sedeni WHERE id_psychologa = $1 AND videne_psychologom = false',
       [psychologId]
     );
     return res.json({ count: result.rows[0]?.count || 0 });
@@ -105,9 +122,10 @@ router.put('/psycholog/:psychologId/mark-seen', async (req, res) => {
     }
 
     await pool.query(
-      'UPDATE Rezervacia_sedeni SET videne_psychologom = true WHERE id_psychologicky = $1 AND videne_psychologom = false',
+      'UPDATE Rezervacia_sedeni SET videne_psychologom = true WHERE id_psychologa = $1 AND videne_psychologom = false',
       [psychologId]
     );
+    emitReservationUpdate(req, psychologId);
     return res.json({ success: true });
   } catch (error) {
     console.error('Mark reservations seen error:', error);
@@ -151,11 +169,11 @@ router.get('/', async (req, res) => {
     if (isPsycholog(req.user?.role)) {
       const result = await pool.query(`
         SELECT r.id_sedenia, r.datum::text AS datum, r.cas_od, r.cas_do, r.stav, r.poznamka, r.videne_psychologom,
-               r.id_psychologicky, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
+               r.id_psychologa, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
                r.id_uzivatela, u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email
         FROM Rezervacia_sedeni r
         LEFT JOIN Uzivatel u ON u.id_uzivatela = r.id_uzivatela
-        LEFT JOIN Psychologicka p ON p.id_psychologicky = r.id_psychologicky
+        LEFT JOIN Psycholog p ON p.id_psychologa = r.id_psychologa
         ORDER BY r.datum DESC, r.cas_od DESC
       `);
       return res.json(result.rows);
@@ -163,10 +181,10 @@ router.get('/', async (req, res) => {
 
     const result = await pool.query(`
       SELECT r.id_sedenia, r.datum::text AS datum, r.cas_od, r.cas_do, r.stav, r.poznamka,
-             r.id_psychologicky, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
+             r.id_psychologa, p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko,
              r.id_uzivatela
       FROM Rezervacia_sedeni r
-      LEFT JOIN Psychologicka p ON p.id_psychologicky = r.id_psychologicky
+      LEFT JOIN Psycholog p ON p.id_psychologa = r.id_psychologa
       WHERE r.id_uzivatela = $1
       ORDER BY r.datum DESC, r.cas_od DESC
     `, [req.user.id]);
@@ -252,10 +270,12 @@ router.patch('/:id', async (req, res) => {
                            stav,
                            poznamka,
                            videne_psychologom,
-                           id_psychologicky,
+                           id_psychologa,
                            id_uzivatela`;
     const result = await pool.query(sql, params);
-    res.json({ message: 'OK', reservation: result.rows[0] });
+    const updated = result.rows[0];
+    emitReservationUpdate(req, updated?.id_psychologa);
+    res.json({ message: 'OK', reservation: updated });
   } catch (error) {
     if (error?.code === '23505') {
       return res.status(409).json({ error: 'Tento termín je už obsadený' });
@@ -267,19 +287,88 @@ router.patch('/:id', async (req, res) => {
 
 // 5) Vymazať jednu rezerváciu
 router.delete('/:id', async (req, res) => {
+  const client = await pool.connect();
   try {
-    if (!isPsycholog(req.user?.role)) {
-      return res.status(403).json({ error: 'Nemáte oprávnenie' });
-    }
-    const { id } = req.params;
-    const result = await pool.query('DELETE FROM Rezervacia_sedeni WHERE id_sedenia = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: 'id je povinne' });
+
+    const authedId = Number(req.user?.id);
+    if (!authedId) return res.status(401).json({ error: 'Prihlásenie je povinné' });
+
+    await client.query('BEGIN');
+
+    const current = await client.query(
+      `SELECT id_sedenia, datum, cas_od, cas_do, id_psychologa, id_uzivatela, stav
+       FROM Rezervacia_sedeni
+       WHERE id_sedenia = $1
+       FOR UPDATE`,
+      [id]
+    );
+    if (current.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Rezervácia nenájdená' });
     }
-    res.json({ message: 'Rezervácia vymazaná', deleted: result.rows[0] });
+
+    const reservation = current.rows[0];
+    const canAdminDelete = isPsycholog(req.user?.role);
+    const isOwner = Number(reservation.id_uzivatela) === authedId;
+    if (!canAdminDelete && !isOwner) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const deletedRes = await client.query(
+      'DELETE FROM Rezervacia_sedeni WHERE id_sedenia = $1 RETURNING *',
+      [id]
+    );
+
+    // Free the corresponding time slot again (best-effort).
+    // Prefer matching by (psycholog, datum, cas_od, cas_do); if no row updated, fall back to (psycholog, datum, cas_od).
+    let freed = 0;
+    try {
+      const tryFull = await client.query(
+        `UPDATE Cas_slot
+            SET volny = true
+          WHERE id_psychologa = $1
+            AND datum = $2
+            AND cas_od = $3
+            AND cas_do = $4`,
+        [reservation.id_psychologa, reservation.datum, reservation.cas_od, reservation.cas_do]
+      );
+      freed = Number(tryFull.rowCount || 0);
+    } catch {
+      // ignore
+    }
+
+    if (!freed) {
+      try {
+        const tryPartial = await client.query(
+          `UPDATE Cas_slot
+              SET volny = true
+            WHERE id_psychologa = $1
+              AND datum = $2
+              AND cas_od = $3`,
+          [reservation.id_psychologa, reservation.datum, reservation.cas_od]
+        );
+        freed = Number(tryPartial.rowCount || 0);
+      } catch {
+        // ignore
+      }
+    }
+
+    await client.query('COMMIT');
+    emitReservationUpdate(req, reservation?.id_psychologa);
+    return res.json({ message: 'Rezervácia zrušená', deleted: deletedRes.rows[0], freedSlots: freed });
   } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // ignore
+    }
     console.error('Delete reservation error:', error);
-    res.status(500).json({ error: 'Chyba servera' });
+    return res.status(500).json({ error: 'Chyba servera' });
+  } finally {
+    client.release();
   }
 });
 

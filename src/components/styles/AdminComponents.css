@@ -200,7 +200,8 @@
   border-radius: 4px;
 }
 
-.status-pending {
+.status-pending,
+.status-vytvorena {
   background: #fff3cd;
   color: #856404;
 }

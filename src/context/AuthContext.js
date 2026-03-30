@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { disconnectSocket } from "../utils/socket";
 
 const AuthContext = createContext(null);
 
@@ -13,6 +14,33 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [confirmedSessionsCount, setConfirmedSessionsCount] = useState(0);
+
+  const refreshConfirmedSessionsCount = useCallback(async () => {
+    const role = String(user?.role || '').toLowerCase();
+    if (!user?.id || !token || role === 'psycholog' || role === 'admin') {
+      setConfirmedSessionsCount(0);
+      return;
+    }
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/reservations/user/${user.id}/confirmed-count`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      setConfirmedSessionsCount(Number(data?.count) || 0);
+    } catch {
+      // ignore
+    }
+  }, [user?.id, user?.role, token]);
+
+  useEffect(() => {
+    const handler = () => {
+      refreshConfirmedSessionsCount();
+    };
+    window.addEventListener('reservations:refresh-confirmed-count', handler);
+    return () => window.removeEventListener('reservations:refresh-confirmed-count', handler);
+  }, [refreshConfirmedSessionsCount]);
 
   // Načítanie užívateľa z localStorage pri načítaní
   useEffect(() => {
@@ -103,65 +131,78 @@ export const AuthProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [user, lastActivity]);
 
-  // Prihlásenie cez backend API (vracia JWT token)
-  const login = async (email, password) => {
-    setLoading(true);
-    try {
-      const resp = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email, password })
+  const fetchMe = useCallback(
+    async (tokenOverride) => {
+      const tok = tokenOverride || token;
+      if (!tok) throw new Error('Chýba token');
+
+      const resp = await fetch(`${API_BASE}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${tok}`, Accept: 'application/json' }
       });
-
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        throw new Error(data?.error || 'Nesprávne prihlasovacie údaje');
+        throw new Error(data?.error || 'Nepodarilo sa načítať profil');
       }
+      return data?.user;
+    },
+    [token]
+  );
 
-      const userPayload = data.user;
-      const tokenPayload = data.token;
+  // Dokončenie Google OAuth loginu: uloží token + načíta profil
+  const completeOAuthLogin = useCallback(
+    async (tokenFromCallback) => {
+      const tok = String(tokenFromCallback || '').trim();
+      if (!tok) throw new Error('Chýba token z OAuth callbacku');
 
-      if (!userPayload || !tokenPayload) {
-        console.error('Login error - missing data:', { user: userPayload, token: tokenPayload });
-        throw new Error('Neplatná odpoveď zo servera');
-      }
-
-      // Uložiť užívateľa a token
-      setUser(userPayload);
-      setToken(tokenPayload);
-      setConfirmedSessionsCount(0);
+      // uložiť token
+      setToken(tok);
       const now = Date.now();
       setLastActivity(now);
-      localStorage.setItem('user', JSON.stringify(userPayload));
-      localStorage.setItem('token', tokenPayload);
+      localStorage.setItem('token', tok);
       localStorage.setItem('lastActivity', now.toString());
+
+      // načítať profil
+      const userPayload = await fetchMe(tok);
+      if (!userPayload?.id) throw new Error('Neplatný profil zo servera');
+
+      setUser(userPayload);
+      localStorage.setItem('user', JSON.stringify(userPayload));
 
       // Načítať počet potvrdených sedení 1x (užívateľ)
       try {
         const role = String(userPayload?.role || '').toLowerCase();
         if (role !== 'psycholog' && role !== 'admin' && userPayload?.id) {
           const countResp = await fetch(`${API_BASE}/api/reservations/user/${userPayload.id}/confirmed-count`, {
-            headers: { Authorization: `Bearer ${tokenPayload}`, Accept: 'application/json' }
+            headers: { Authorization: `Bearer ${tok}`, Accept: 'application/json' }
           });
           if (countResp.ok) {
             const countData = await countResp.json();
             setConfirmedSessionsCount(Number(countData?.count) || 0);
           }
         }
-      } catch (e) {
-        console.error(e);
+      } catch {
+        // ignore
       }
 
-      setLoading(false);
       return userPayload;
-    } catch (err) {
-      setLoading(false);
-      throw err;
-    }
-  };
+    },
+    [fetchMe]
+  );
 
   // Odhlásenie
   const logout = () => {
+    // Mark psychologist offline on server (best-effort)
+    try {
+      if (token) {
+        fetch(`${API_BASE}/api/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+        }).catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+
     setUser(null);
     setToken(null);
     setLastActivity(Date.now());
@@ -169,6 +210,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('lastActivity');
+
+    // Ensure any realtime connections are closed immediately on logout.
+    disconnectSocket();
   };
 
   // Kontrola, či užívateľ má určitú rolu
@@ -192,7 +236,6 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     token,
-    login,
     logout,
     loading,
     isAuthenticated: !!user && !!token,
@@ -202,7 +245,9 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     lastActivity,
     fetchWithAuth,
-    confirmedSessionsCount
+    confirmedSessionsCount,
+    refreshConfirmedSessionsCount,
+    completeOAuthLogin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

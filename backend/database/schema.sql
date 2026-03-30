@@ -6,21 +6,17 @@ CREATE TABLE IF NOT EXISTS Uzivatel (
     meno VARCHAR(100) NOT NULL,
     priezvisko VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    heslo VARCHAR(255) NOT NULL,
-    typ_uzivatela VARCHAR(50) NOT NULL CHECK (typ_uzivatela IN ('student', 'ucitel', 'admin')),
-    aktualny BOOLEAN DEFAULT true
+    typ_uzivatela VARCHAR(50) NOT NULL CHECK (typ_uzivatela IN ('student', 'ucitel'))
 );
 
 -- Tabuľka Psychológov
-CREATE TABLE IF NOT EXISTS Psychologicka (
-    id_psychologicky SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Psycholog (
+    id_psychologa SERIAL PRIMARY KEY,
     meno VARCHAR(100) NOT NULL,
     priezvisko VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    heslo VARCHAR(255) NOT NULL,
     telefon VARCHAR(20),
-    je_online BOOLEAN DEFAULT false,
-    aktualny BOOLEAN DEFAULT true
+    je_online BOOLEAN DEFAULT false
 );
 
 -- Tabuľka Schránky dôvery
@@ -35,9 +31,8 @@ CREATE TABLE IF NOT EXISTS Schranka_dovery (
     videne_uzivatelom BOOLEAN NOT NULL DEFAULT true,
     odpoved VARCHAR(1000),
     datum_pridania TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    id_psychologicky INT REFERENCES Psychologicka(id_psychologicky) ON DELETE SET NULL,
-    id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,
-    stav VARCHAR(50) DEFAULT 'novy' CHECK (stav IN ('novy', 'priradzene', 'vyriesene'))
+    id_psychologa INT REFERENCES Psycholog(id_psychologa) ON DELETE SET NULL,
+    id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
 );
 
 -- Tabuľka Novinek
@@ -46,7 +41,7 @@ CREATE TABLE IF NOT EXISTS Novinky (
     nadpis VARCHAR(200) NOT NULL,
     popis VARCHAR(2000) NOT NULL,
     obsah TEXT,
-    id_psychologicky INT NOT NULL REFERENCES Psychologicka(id_psychologicky) ON DELETE CASCADE,
+    id_psychologa INT NOT NULL REFERENCES Psycholog(id_psychologa) ON DELETE CASCADE,
     publikovane BOOLEAN DEFAULT false
 );
 
@@ -54,9 +49,9 @@ CREATE TABLE IF NOT EXISTS Novinky (
 CREATE TABLE IF NOT EXISTS Chat (
     id_chatu SERIAL PRIMARY KEY,
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,
-    id_psychologicky INT NOT NULL REFERENCES Psychologicka(id_psychologicky) ON DELETE CASCADE,
+    id_psychologa INT NOT NULL REFERENCES Psycholog(id_psychologa) ON DELETE CASCADE,
     zaciatok_chatu TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    posledna_zprava TIMESTAMP,
+    posledna_sprava TIMESTAMP,
     aktivny BOOLEAN DEFAULT true
 );
 
@@ -77,18 +72,18 @@ CREATE TABLE IF NOT EXISTS Rezervacia_sedeni (
     cas_od TIME NOT NULL,
     cas_do TIME NOT NULL,
     vytvorene TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    stav VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (stav IN ('pending', 'potvrdena', 'zrusena', 'dokoncena')),
+    stav VARCHAR(50) NOT NULL DEFAULT 'vytvorena' CHECK (stav IN ('vytvorena', 'potvrdena', 'zrusena', 'dokoncena')),
     poznamka VARCHAR(500),
-        videne_psychologom BOOLEAN NOT NULL DEFAULT false,
-    id_psychologicky INT NOT NULL REFERENCES Psychologicka(id_psychologicky) ON DELETE RESTRICT,
+    videne_psychologom BOOLEAN NOT NULL DEFAULT false,
+    id_psychologa INT NOT NULL REFERENCES Psycholog(id_psychologa) ON DELETE RESTRICT,
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,
-    UNIQUE(datum, cas_od, id_psychologicky)
+    UNIQUE(datum, cas_od, id_psychologa)
 );
 
 -- Tabuľka časových slotov (pre psychológa)
 CREATE TABLE IF NOT EXISTS Cas_slot (
     id_casu SERIAL PRIMARY KEY,
-    id_psychologicky INT NOT NULL REFERENCES Psychologicka(id_psychologicky) ON DELETE CASCADE,
+    id_psychologa INT NOT NULL REFERENCES Psycholog(id_psychologa) ON DELETE CASCADE,
     datum DATE NOT NULL,
     cas_od TIME NOT NULL,
     cas_do TIME NOT NULL,
@@ -104,19 +99,5 @@ CREATE TABLE IF NOT EXISTS expetny_system (
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
 );
 
--- INSERT testovacích dát
--- Psychológovia
-INSERT INTO Psychologicka (meno, priezvisko, email, heslo, telefon, je_online) 
-VALUES ('Mária', 'Nováková', 'psycholog@skolka.sk', 'admin123', '+421 2 1234 5678', false)
-ON CONFLICT (email) DO NOTHING;
 
--- Užívatelia
-INSERT INTO Uzivatel (meno, priezvisko, email, heslo, typ_uzivatela)
-VALUES 
-    ('Ján', 'Kovač', 'ucitel@skolka.sk', 'user123', 'ucitel'),
-    ('Peter', 'Malý', 'ziak@skolka.sk', 'user123', 'student'),
-    ('Mária', 'Veselá', 'ziacka@skolka.sk', 'user123', 'student'),
-    ('Lucia', 'Horváthová', 'ucitelka@skolka.sk', 'user123', 'ucitel'),
-    ('Tomáš', 'Benko', 'student2@skolka.sk', 'user123', 'student')
-ON CONFLICT (email) DO NOTHING;
 

@@ -49,7 +49,7 @@ router.get('/monthly', async (req, res) => {
     const reservationsByDateQ = pool.query(
       `SELECT r.datum::text AS date, COUNT(*)::int AS count
        FROM Rezervacia_sedeni r
-       WHERE r.id_psychologicky = $1
+       WHERE r.id_psychologa = $1
          AND r.stav = 'dokoncena'
          AND r.datum >= $2::date
          AND r.datum < ($2::date + INTERVAL '1 month')
@@ -81,7 +81,7 @@ router.get('/monthly', async (req, res) => {
       `SELECT COUNT(*)::int AS count
        FROM Sprava s
        JOIN Chat c ON c.id_chatu = s.id_chatu
-       WHERE c.id_psychologicky = $1
+       WHERE c.id_psychologa = $1
          AND s.cas_odoslania >= $2::date
          AND s.cas_odoslania < ($2::date + INTERVAL '1 month')`,
       [psychologId, startDate]
@@ -90,7 +90,7 @@ router.get('/monthly', async (req, res) => {
     const trustCountQ = pool.query(
       `SELECT COUNT(*)::int AS count
        FROM Schranka_dovery sd
-       WHERE (sd.id_psychologicky = $1 OR sd.id_psychologicky IS NULL)
+       WHERE (sd.id_psychologa = $1 OR sd.id_psychologa IS NULL)
          AND sd.datum_pridania >= $2::date
          AND sd.datum_pridania < ($2::date + INTERVAL '1 month')`,
       [psychologId, startDate]
@@ -100,7 +100,7 @@ router.get('/monthly', async (req, res) => {
       `SELECT COALESCE(NULLIF(TRIM(sd.kategoria), ''), 'Neznáma') AS kategoria,
               COUNT(*)::int AS count
        FROM Schranka_dovery sd
-       WHERE (sd.id_psychologicky = $1 OR sd.id_psychologicky IS NULL)
+       WHERE (sd.id_psychologa = $1 OR sd.id_psychologa IS NULL)
          AND sd.datum_pridania >= $2::date
          AND sd.datum_pridania < ($2::date + INTERVAL '1 month')
        GROUP BY COALESCE(NULLIF(TRIM(sd.kategoria), ''), 'Neznáma')

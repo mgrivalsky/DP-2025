@@ -124,8 +124,8 @@ const ReservationSystem = () => {
           cas_od,
           cas_do: cas_do,
           poznamka: "",
-          stav: "pending",
-          id_psychologicky: 1
+          stav: "vytvorena",
+          id_psychologa: 1
         })
       });
 
@@ -188,6 +188,14 @@ const ReservationSystem = () => {
   return (
     <section id="ReservationSystem" className="reservation-system">
       <h2>Rezervácia sedení</h2>
+
+      <p className="reservation-system__intro">
+        Ak preferujete osobné stretnutie, môžete si jednoducho vybrať termín, ktorý vám vyhovuje.
+        Spoločne tak získate priestor pokojne prebrať všetko, čo vás trápi, v čase, ktorý vám najviac vyhovuje.
+        Vyberte si dostupný dátum a čas a potvrďte svoju rezerváciu.
+        Prehľad všetkých vašich rezervácií nájdete po kliknutí na váš používateľský profil,
+        kde si môžete pozrieť ich stav a v prípade potreby rezerváciu zrušiť.
+      </p>
       
       {availableDays.length === 0 && (
         <div className="reservation-system__noSlotsNotice">

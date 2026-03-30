@@ -74,24 +74,19 @@ Server bude bežať na `http://localhost:5000`
 
 ### Autentifikácia
 
-#### POST /api/auth/login
-Prihlásenie používateľa
-```json
-{
-  "email": "zuzova@spseke.sk",
-  "password": "admin123"
-}
-```
+Prihlásenie je realizované výhradne cez Google OAuth (bez interných hesiel).
 
-#### POST /api/auth/register
-Registrácia nového používateľa
-```json
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "Ján Novák"
-}
-```
+#### GET /api/auth/google
+Spustí Google OAuth flow.
+
+#### GET /api/auth/google/callback
+OAuth callback (musí sa zhodovať s `GOOGLE_CALLBACK_URL`).
+
+#### GET /api/auth/me
+Vráti profil aktuálne prihláseného používateľa na základe JWT v hlavičke `Authorization: Bearer <token>`.
+
+#### POST /api/auth/logout
+Odhlási používateľa na klientovi (token sa maže vo fronte) a ak ide o psychológa/admina, backend nastaví `je_online=false`.
 
 ### Rezervácie
 
@@ -132,9 +127,7 @@ Aktualizovať status rezervácie (iba admin)
 
 ## Testovacie účty
 
-- **Admin**: zuzova@spseke.sk / admin123
-- **Učiteľ**: ucitel@skolka.sk / user123
-- **Žiak**: ziak@skolka.sk / user123
+Aplikácia nepoužíva interné účty s heslom. Pri prvom prihlásení cez Google sa používateľ automaticky vytvorí v databáze podľa emailu.
 
 ## Štruktúra databázy
 

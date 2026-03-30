@@ -29,6 +29,7 @@ import Admin from "./components/admin/Admin";
 
 // Auth components
 import LoginPage from "./components/auth/LoginPage";
+import OAuthCallback from "./components/auth/OAuthCallback";
 import { ProtectedRoute, PublicRoute } from "./components/auth/ProtectedRoute";
 
 import { AuthProvider } from "./context/AuthContext";
@@ -91,6 +92,9 @@ const App = () => {
               </PublicRoute>
             } 
           />
+
+          {/* Google OAuth callback (receives token and finalizes login in SPA) */}
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           
           {/* Užívateľské rozhranie - scrollovacia stránka pre prihlásených užívateľov */}
           <Route 

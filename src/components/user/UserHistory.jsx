@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { NavigationMain } from "./navigationMain";
+import ConfirmDialog from "../admin/ConfirmDialog";
 import "../styles/UserHistory.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
@@ -23,6 +24,8 @@ export default function UserHistory() {
 	const [trustBox, setTrustBox] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [cancelingId, setCancelingId] = useState(null);
+	const [confirmDialog, setConfirmDialog] = useState({ open: false, title: "", message: "", onConfirm: null });
 
 	const formatDate = (value) => {
 		if (!value) return "Bez dátumu";
@@ -41,13 +44,57 @@ export default function UserHistory() {
 	};
 
 	const formatStatus = (stav) => {
-		if (!stav) return { label: "Čaká na potvrdenie", tone: "pending" };
+		if (!stav) return { label: "Vytvorená", tone: "vytvorena" };
 		const lower = String(stav).toLowerCase();
-		if (lower.includes("pending")) return { label: "Čaká na potvrdenie", tone: "pending" };
+		if (lower.includes("vytvorena")) return { label: "Vytvorená", tone: "vytvorena" };
 		if (lower.includes("potvrden")) return { label: "Potvrdená", tone: "ok" };
 		if (lower.includes("dokonc")) return { label: "Dokončená", tone: "resolved" };
 		if (lower.includes("zrus")) return { label: "Zrušená", tone: "rejected" };
-		return { label: stav, tone: "pending" };
+		return { label: stav, tone: "vytvorena" };
+	};
+
+	const canCancelReservation = (s) => {
+		const st = String(s?.stav || '').toLowerCase();
+		// Keep it simple: allow cancelling only for created/confirmed sessions.
+		return st.includes('vytvorena') || st.includes('potvrden');
+	};
+
+	const performCancelReservation = async (s) => {
+		try {
+			const id = Number(s?.id_sedenia);
+			if (!id) return;
+			if (cancelingId) return;
+
+			setError(null);
+			setCancelingId(id);
+			const resp = await fetchWithAuth(`${API_BASE}/api/reservations/${id}`, { method: 'DELETE' });
+			const data = await resp.json().catch(() => ({}));
+			if (!resp.ok) {
+				throw new Error(data?.error || 'Nepodarilo sa zrušiť rezerváciu');
+			}
+			setSessions((prev) => (prev || []).filter((x) => Number(x?.id_sedenia) !== id));
+			window.dispatchEvent(new Event('reservations:refresh-confirmed-count'));
+		} catch (e) {
+			setError(e?.message || 'Nepodarilo sa zrušiť rezerváciu');
+		} finally {
+			setCancelingId(null);
+		}
+	};
+
+	const cancelReservation = (s) => {
+		const id = Number(s?.id_sedenia);
+		if (!id) return;
+		const dateText = formatDate(s?.datum);
+		const timeText = `${formatTime(s?.cas_od)}${s?.cas_do ? ` - ${formatTime(s?.cas_do)}` : ""}`;
+		setConfirmDialog({
+			open: true,
+			title: "Zrušiť rezerváciu?",
+			message: `Naozaj chcete zrušiť rezerváciu na ${dateText} (${timeText})? Rezervácia sa vymaže a termín sa znova uvoľní.`,
+			onConfirm: () => {
+				setConfirmDialog({ open: false, title: "", message: "", onConfirm: null });
+				performCancelReservation(s);
+			}
+		});
 	};
 
 	useEffect(() => {
@@ -122,7 +169,7 @@ export default function UserHistory() {
 			<NavigationMain />
 			<div className="user-history__page">
 				<div className="user-history__container">
-					<header className="user-history__header">
+					{/* <header className="user-history__header">
 						<div>
 							<h1 className="user-history__title">Moja história</h1>
 							<p className="user-history__subtitle">Tvoje sedenia a príspevky v schránke dôvery.</p>
@@ -136,7 +183,11 @@ export default function UserHistory() {
 								Odhlásiť sa
 							</button>
 						</div>
-					</header>
+					</header> */}
+					<br />
+					<br />
+					<br />
+					<br />
 
 					{loading && (
 						<div className="user-history__loadingCard">
@@ -157,13 +208,16 @@ export default function UserHistory() {
 									Červené orámovanie znamená potvrdené sedenie s pani psychologičkou. Notifikácia vedľa mena zmizne až vtedy,
 									keď psychologička označí sedenie ako dokončené/zrušené.
 								</p>
+								<p className="user-history__sectionInfo">
+									Rezerváciu vieš zrušiť kliknutím na tlačidlo „Zrušiť“.
+								</p>
 								{sessions.length === 0 ? (
 									<p className="user-history__empty">Zatiaľ nemáš žiadne sedenia.</p>
 								) : (
 									<div className="user-history__list">
 										{sessions.map((s, idx) => (
 											<div
-												key={idx}
+												key={s.id_sedenia || idx}
 												className={`user-history__itemRow${String(s?.stav || '').toLowerCase().includes('potvrden') ? ' user-history__itemRow--confirmed' : ''}`}
 											>
 												<div>
@@ -189,6 +243,16 @@ export default function UserHistory() {
 															</span>
 														);
 													})()}
+													{canCancelReservation(s) && (
+														<button
+															type="button"
+															onClick={() => cancelReservation(s)}
+															disabled={cancelingId === Number(s?.id_sedenia)}
+															className="user-history__cancelBtn"
+														>
+															{cancelingId === Number(s?.id_sedenia) ? 'Ruším...' : 'Zrušiť'}
+														</button>
+													)}
 													{s.psycholog_meno && (
 														<div className="user-history__psycholog">
 															Psychológ: {s.psycholog_meno} {s.psycholog_priezvisko}
@@ -254,6 +318,17 @@ export default function UserHistory() {
 					)}
 				</div>
 			</div>
+			<ConfirmDialog
+				open={confirmDialog.open}
+				title={confirmDialog.title}
+				message={confirmDialog.message}
+				confirmText="Áno, zrušiť"
+				cancelText="Späť"
+				confirmDanger={true}
+				dismissOnOverlayClick={true}
+				onConfirm={confirmDialog.onConfirm}
+				onCancel={() => setConfirmDialog({ open: false, title: "", message: "", onConfirm: null })}
+			/>
 		</>
 	);
 }

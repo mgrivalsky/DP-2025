@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import '../styles/PsychologChat.css';
+import { getSocket } from '../../utils/socket';
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
-const POLL_INTERVAL = 2000;
 
 export const PsychologChat = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, token, fetchWithAuth } = useAuth();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -15,6 +15,10 @@ export const PsychologChat = () => {
   const [error, setError] = useState('');
   const messagesContainerRef = useRef(null);
   const lastMessageLengthRef = useRef(0);
+  const socketRef = useRef(null);
+  const selectedChatRef = useRef(null);
+  const joinedChatsRef = useRef(new Set());
+  const seenMessageIdsRef = useRef(new Set());
 
   const handleSelectChat = async (chat) => {
     setSelectedChat(chat);
@@ -27,10 +31,15 @@ export const PsychologChat = () => {
     try {
       await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/mark-seen-user`, { method: 'PUT' });
       loadChats();
+      window.dispatchEvent(new Event('admin:refresh-chat-unread'));
     } catch (err) {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
 
   // Auto-scroll to latest message only when new message arrives
   useEffect(() => {
@@ -48,9 +57,76 @@ export const PsychologChat = () => {
   useEffect(() => {
     if (!user?.id) return;
     loadChats();
-    const interval = setInterval(loadChats, POLL_INTERVAL);
-    return () => clearInterval(interval);
   }, [user?.id, fetchWithAuth]);
+
+  // Socket.io connection + listeners (no polling)
+  useEffect(() => {
+    if (!token) return;
+
+    const sock = getSocket(token);
+    if (!sock) return;
+    socketRef.current = sock;
+
+    const onMessage = (payload) => {
+      if (!payload) return;
+      const chatId = Number(payload.id_chatu);
+      if (!chatId) return;
+
+      const msgId = payload.id_spravy;
+      if (msgId) {
+        if (seenMessageIdsRef.current.has(msgId)) return;
+        seenMessageIdsRef.current.add(msgId);
+      }
+
+      const currentChatId = Number(selectedChatRef.current?.id_chatu);
+      const isCurrent = currentChatId && chatId === currentChatId;
+
+      if (isCurrent) {
+        setMessages((prev) => [...prev, payload]);
+        // If user wrote while psychologist is in the chat, mark as seen (best-effort)
+        if (String(payload.odesilatel_typ || '').toLowerCase() !== 'psycholog') {
+          try {
+            fetchWithAuth(`${API_BASE}/api/chat/${chatId}/mark-seen-user`, { method: 'PUT' }).catch(() => {});
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      setChats((prev) => {
+        const arr = Array.isArray(prev) ? prev : [];
+        let changed = false;
+        const next = arr.map((c) => {
+          if (Number(c?.id_chatu) !== chatId) return c;
+          changed = true;
+
+          const incomingFromUser = String(payload.odesilatel_typ || '').toLowerCase() !== 'psycholog';
+          const bumpUnread = !isCurrent && incomingFromUser;
+          return {
+            ...c,
+            posledna_sprava: payload.cas_odoslania || new Date().toISOString(),
+            unread_count: bumpUnread ? Number(c.unread_count || 0) + 1 : (isCurrent ? 0 : c.unread_count)
+          };
+        });
+
+        if (!changed) return prev;
+
+        // Sort by last activity (newest first)
+        next.sort((a, b) => {
+          const ta = a?.posledna_sprava ? new Date(a.posledna_sprava).getTime() : 0;
+          const tb = b?.posledna_sprava ? new Date(b.posledna_sprava).getTime() : 0;
+          return tb - ta;
+        });
+        return next;
+      });
+    };
+
+    sock.on('message', onMessage);
+
+    return () => {
+      sock.off('message', onMessage);
+    };
+  }, [token, fetchWithAuth]);
 
   const loadChats = async () => {
     try {
@@ -76,12 +152,35 @@ export const PsychologChat = () => {
           })
         );
 
-        setChats(chatsData.map((chat, idx) => ({
+        const computed = chatsData.map((chat, idx) => ({
           ...chat,
           unread_count: counts[idx]
-        })));
+        }));
+        setChats(computed);
+
+        // Join all chat rooms so psychologist receives realtime updates for every chat.
+        const sock = socketRef.current;
+        if (sock) {
+          for (const c of computed) {
+            const id = Number(c?.id_chatu);
+            if (!id || joinedChatsRef.current.has(id)) continue;
+            joinedChatsRef.current.add(id);
+            sock.emit('joinChat', { chatId: id });
+          }
+        }
       } else {
         setChats(chatsData);
+
+        // Join all chat rooms so psychologist receives realtime updates for every chat.
+        const sock = socketRef.current;
+        if (sock) {
+          for (const c of chatsData) {
+            const id = Number(c?.id_chatu);
+            if (!id || joinedChatsRef.current.has(id)) continue;
+            joinedChatsRef.current.add(id);
+            sock.emit('joinChat', { chatId: id });
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -98,7 +197,13 @@ export const PsychologChat = () => {
         const response = await fetchWithAuth(`${API_BASE}/api/chat/${selectedChat.id_chatu}/messages`);
         if (!response.ok) throw new Error('Failed to load messages');
         const data = await response.json();
-        setMessages(data || []);
+        const initial = data || [];
+        const nextSet = new Set();
+        for (const m of initial) {
+          if (m?.id_spravy) nextSet.add(m.id_spravy);
+        }
+        seenMessageIdsRef.current = nextSet;
+        setMessages(initial);
 
         // No seen tracking
       } catch (err) {
@@ -107,26 +212,46 @@ export const PsychologChat = () => {
     };
 
     loadMessages();
-    const interval = setInterval(loadMessages, POLL_INTERVAL);
-    return () => clearInterval(interval);
   }, [selectedChat?.id_chatu, fetchWithAuth]);
+
+  // Ensure selected chat room is joined (also joined via loadChats, but safe)
+  useEffect(() => {
+    if (!selectedChat?.id_chatu) return;
+    const sock = socketRef.current;
+    if (!sock) return;
+    const id = Number(selectedChat.id_chatu);
+    if (!id) return;
+    if (!joinedChatsRef.current.has(id)) joinedChatsRef.current.add(id);
+    sock.emit('joinChat', { chatId: id });
+  }, [selectedChat?.id_chatu]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!messageText.trim() || !selectedChat?.id_chatu) return;
 
+    const msgToSend = messageText;
+    setMessageText('');
+
     try {
+      const sock = socketRef.current;
+      if (sock && sock.connected) {
+        sock.emit('sendMessage', { chatId: selectedChat.id_chatu, obsah: msgToSend });
+        return;
+      }
+
+      // Fallback to REST if socket is not connected.
       const response = await fetchWithAuth(`${API_BASE}/api/chat/${selectedChat.id_chatu}/message`, {
         method: 'POST',
-        body: JSON.stringify({ obsah: messageText })
+        body: JSON.stringify({ obsah: msgToSend })
       });
       if (!response.ok) throw new Error('Failed to send message');
       const message = await response.json();
-      setMessages([...messages, message]);
-      setMessageText('');
+      if (message?.id_spravy) seenMessageIdsRef.current.add(message.id_spravy);
+      setMessages((prev) => [...prev, message]);
     } catch (err) {
       console.error(err);
       setError('Chyba pri odoslaní správy');
+      setMessageText(msgToSend);
     }
   };
 
@@ -160,13 +285,13 @@ export const PsychologChat = () => {
                   </div>
                 </div>
                 <div className="psycholog-chat-meta">
-                  {chat.posledna_zprava && (
+                  {chat.posledna_sprava && (
                     <>
                       <small className="psycholog-chat-date">
-                        {new Date(chat.posledna_zprava).toLocaleDateString('sk-SK')}
+                        {new Date(chat.posledna_sprava).toLocaleDateString('sk-SK')}
                       </small>
                       <small className="psycholog-chat-time">
-                        {new Date(chat.posledna_zprava).toLocaleTimeString('sk-SK', {
+                        {new Date(chat.posledna_sprava).toLocaleTimeString('sk-SK', {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
@@ -195,7 +320,7 @@ export const PsychologChat = () => {
               <div className="psycholog-messages" ref={messagesContainerRef}>
                 {messages.map((msg, idx) => (
                   <div
-                    key={idx}
+                    key={msg?.id_spravy || idx}
                     className={`psycholog-message ${
                       msg.odesilatel_typ === 'uzivatel' ? 'user' : 'psycholog'
                     }`}

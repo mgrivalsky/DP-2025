@@ -36,7 +36,7 @@ export const ReservationForm = () => {
         },
         body: JSON.stringify({
           ...formData,
-          id_psychologicky: 1
+          id_psychologa: 1
         })
       });
 

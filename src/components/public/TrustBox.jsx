@@ -33,7 +33,7 @@ export const TrustBox = (props) => {
         <div className="section-title text-center">
           <h2>Schránka dôvery</h2>
           <p>
-            Schránka dôvery je priestor, kde môžu naši študenti, rodičia aj zamestnanci anonymne alebo verejne vyjadriť svoje postrehy, pocity, návrhy či obavy.
+            Schránka dôvery je priestor, kde môžu naši študenti a zamestnanci anonymne alebo verejne vyjadriť svoje postrehy, pocity, návrhy či obavy.
             Veríme, že otvorená komunikácia je základom príjemného a bezpečného školského prostredia. Ak aj vy chcete prispieť, neváhajte využiť našu <strong>Schránku dôvery</strong> – či už anonymne alebo pod svojím menom.
           </p>
         </div>

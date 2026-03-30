@@ -71,6 +71,11 @@
 	animation: quickhelpPulse 1.5s infinite;
 }
 
+.quickhelp-status-dot.offline {
+	background: #999;
+	animation: none;
+}
+
 
 .quickhelp-error {
 	background: #fdecea;

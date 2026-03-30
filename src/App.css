@@ -1,3 +1,10 @@
+@media screen and (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
 @media screen and (max-width: 400px) {
   #about,
   #services,
@@ -5,10 +12,10 @@
   #team,
   #contact,
   #footer {
-    width: 111%;
+    width: 100%;
   }
 
   #portfolio {
-    width: 110%;
+    width: 100%;
   }
 }

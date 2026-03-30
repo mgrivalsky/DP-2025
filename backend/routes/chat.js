@@ -8,11 +8,27 @@ router.use(authenticateToken);
 const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
 
+// Get online status for a psychologist (minimal public info)
+router.get('/psycholog/:psychologId/status', async (req, res) => {
+  try {
+    const psychologId = parseInt(req.params.psychologId, 10);
+    if (!psychologId) return res.status(400).json({ error: 'psychologId je povinne' });
+
+    const q = await pool.query('SELECT je_online FROM Psycholog WHERE id_psychologa = $1', [psychologId]);
+    if (!q.rows[0]) return res.status(404).json({ error: 'Psycholog nenájdený' });
+
+    return res.json({ id: psychologId, online: q.rows[0].je_online === true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
 async function ensureChatAccess(req, chatId) {
   const chatIdNum = parseInt(chatId, 10);
   if (!chatIdNum) return { ok: false, status: 400, error: 'chatId je povinne' };
 
-  const chatRes = await pool.query('SELECT id_uzivatela, id_psychologicky FROM Chat WHERE id_chatu = $1', [chatIdNum]);
+  const chatRes = await pool.query('SELECT id_uzivatela, id_psychologa FROM Chat WHERE id_chatu = $1', [chatIdNum]);
   if (chatRes.rows.length === 0) return { ok: false, status: 404, error: 'Chat nenájdený' };
 
   const chat = chatRes.rows[0];
@@ -20,7 +36,7 @@ async function ensureChatAccess(req, chatId) {
   if (!authedId) return { ok: false, status: 401, error: 'Prihlásenie je povinné' };
 
   if (isPsycholog(req.user?.role)) {
-    if (Number(chat.id_psychologicky) !== authedId) return { ok: false, status: 403, error: 'Nemáte prístup k tomuto chatu' };
+    if (Number(chat.id_psychologa) !== authedId) return { ok: false, status: 403, error: 'Nemáte prístup k tomuto chatu' };
   } else {
     if (Number(chat.id_uzivatela) !== authedId) return { ok: false, status: 403, error: 'Nemáte prístup k tomuto chatu' };
   }
@@ -40,12 +56,13 @@ router.get('/user/:userId', async (req, res) => {
     const result = await pool.query(
       `SELECT c.*, 
               u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email,
-              p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko, p.email as psycholog_email
+              p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko, p.email as psycholog_email,
+              p.je_online as psycholog_online
        FROM Chat c
        JOIN Uzivatel u ON c.id_uzivatela = u.id_uzivatela
-       JOIN Psychologicka p ON c.id_psychologicky = p.id_psychologicky
+       JOIN Psycholog p ON c.id_psychologa = p.id_psychologa
        WHERE c.id_uzivatela = $1
-       ORDER BY c.posledna_zprava DESC`,
+      ORDER BY c.posledna_sprava DESC`,
       [userId]
     );
     res.json(result.rows);
@@ -69,6 +86,7 @@ router.get('/psycholog/:psychologId', async (req, res) => {
       `SELECT c.*, 
               u.meno as uzivatel_meno, u.priezvisko as uzivatel_priezvisko, u.email as uzivatel_email,
               p.meno as psycholog_meno, p.priezvisko as psycholog_priezvisko, p.email as psycholog_email,
+              p.je_online as psycholog_online,
               (
                 SELECT COUNT(*)::int
                 FROM Sprava s
@@ -78,9 +96,9 @@ router.get('/psycholog/:psychologId', async (req, res) => {
               ) as unread_count
        FROM Chat c
        JOIN Uzivatel u ON c.id_uzivatela = u.id_uzivatela
-       JOIN Psychologicka p ON c.id_psychologicky = p.id_psychologicky
-       WHERE c.id_psychologicky = $1
-       ORDER BY c.posledna_zprava DESC`,
+       JOIN Psycholog p ON c.id_psychologa = p.id_psychologa
+       WHERE c.id_psychologa = $1
+      ORDER BY c.posledna_sprava DESC`,
       [psychologId]
     );
     res.json(result.rows);
@@ -163,6 +181,18 @@ router.put('/:chatId/mark-seen-user', async (req, res) => {
       [chatId]
     );
 
+    // Notify clients to refresh unread counts (e.g., Admin header badge)
+    try {
+      const io = req.app?.get('io');
+      const psychologId = Number(access?.chat?.id_psychologa);
+      if (io) {
+        io.to(`chat:${chatId}`).emit('chatUpdated', { chatId, type: 'seen', by: 'psycholog' });
+        if (psychologId) io.to(`psycholog:${psychologId}`).emit('chatUpdated', { chatId, type: 'seen', by: 'psycholog' });
+      }
+    } catch (_e) {
+      // ignore socket emit errors
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -188,7 +218,7 @@ router.post('/create', async (req, res) => {
     // Check if chat already exists
     let chat = await pool.query(
       `SELECT * FROM Chat 
-       WHERE id_uzivatela = $1 AND id_psychologicky = $2`,
+       WHERE id_uzivatela = $1 AND id_psychologa = $2`,
       [userId, psychologId]
     );
 
@@ -198,7 +228,7 @@ router.post('/create', async (req, res) => {
 
     // Create new chat
     const newChat = await pool.query(
-      `INSERT INTO Chat (id_uzivatela, id_psychologicky) 
+      `INSERT INTO Chat (id_uzivatela, id_psychologa) 
        VALUES ($1, $2)
        RETURNING *`,
       [userId, psychologId]
@@ -236,7 +266,7 @@ router.post('/:chatId/message', async (req, res) => {
 
     // Update chat's last message timestamp
     await pool.query(
-      `UPDATE Chat SET posledna_zprava = CURRENT_TIMESTAMP WHERE id_chatu = $1`,
+      `UPDATE Chat SET posledna_sprava = CURRENT_TIMESTAMP WHERE id_chatu = $1`,
       [chatId]
     );
 

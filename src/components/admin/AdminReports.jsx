@@ -289,7 +289,7 @@ const AdminReports = () => {
           || label === 'Použitie expertného systému podľa typu problému';
         const isHeader = label === 'Dátum' || label === 'Kategória' || label === 'Typ problému';
 
-        if (isBlank) return { hpt: 10 };
+        if (isBlank) return { hpt: 18 };
         if (idx === 0) return { hpt: 28 };
         if (isSection) return { hpt: 22 };
         if (isHeader) return { hpt: 20 };

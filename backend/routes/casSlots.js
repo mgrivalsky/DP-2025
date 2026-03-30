@@ -12,7 +12,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (psycholog_id) {
       params.push(psycholog_id);
-      where.push(`id_psychologicky = $${params.length}`);
+      where.push(`id_psychologa = $${params.length}`);
     }
     if (date) {
       params.push(date);
@@ -22,7 +22,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const sql = `
       SELECT 
         id_casu, 
-        id_psychologicky, 
+        id_psychologa, 
         TO_CHAR(datum, 'YYYY-MM-DD') as datum,
         cas_od, 
         cas_do, 
@@ -46,7 +46,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const result = await pool.query(`
       SELECT 
         id_casu, 
-        id_psychologicky, 
+        id_psychologa, 
         TO_CHAR(datum, 'YYYY-MM-DD') as datum,
         cas_od, 
         cas_do, 
@@ -65,14 +65,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // CREATE slot
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { id_psychologicky, datum, cas_od, cas_do, volny = true } = req.body;
-    if (!id_psychologicky || !datum || !cas_od || !cas_do) {
-      return res.status(400).json({ error: 'Chýbajú povinné polia: id_psychologicky, datum, cas_od, cas_do' });
+    const { id_psychologa, datum, cas_od, cas_do, volny = true } = req.body;
+    const psychologId = id_psychologa;
+    if (!psychologId || !datum || !cas_od || !cas_do) {
+      return res.status(400).json({ error: 'Chýbajú povinné polia: id_psychologa, datum, cas_od, cas_do' });
     }
 
     const result = await pool.query(
-      'INSERT INTO Cas_slot (id_psychologicky, datum, cas_od, cas_do, volny) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [id_psychologicky, datum, cas_od, cas_do, volny]
+      'INSERT INTO Cas_slot (id_psychologa, datum, cas_od, cas_do, volny) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [psychologId, datum, cas_od, cas_do, volny]
     );
     res.status(201).json({ message: 'OK', slot: result.rows[0] });
   } catch (error) {
@@ -88,10 +89,18 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     const fields = [];
     const values = [];
 
-    ['id_psychologicky', 'datum', 'cas_od', 'cas_do', 'volny'].forEach((key) => {
-      if (req.body[key] !== undefined) {
-        values.push(req.body[key]);
-        fields.push(`${key} = $${values.length}`);
+    const keyMap = {
+      id_psychologa: 'id_psychologa',
+      datum: 'datum',
+      cas_od: 'cas_od',
+      cas_do: 'cas_do',
+      volny: 'volny'
+    };
+
+    Object.keys(keyMap).forEach((incomingKey) => {
+      if (req.body[incomingKey] !== undefined) {
+        values.push(req.body[incomingKey]);
+        fields.push(`${keyMap[incomingKey]} = $${values.length}`);
       }
     });
 

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { fetchWithToken, API_BASE, formatSkDate } from '../../utils/adminHelpers';
 import TrustBoxPublishedPreview from './TrustBoxPublishedPreview';
 import '../styles/AdminComponents.css';
+import { getSocket } from '../../utils/socket';
 
 const AdminTrustBox = ({ onSeenChange }) => {
   const { token } = useAuth();
@@ -19,6 +20,29 @@ const AdminTrustBox = ({ onSeenChange }) => {
   useEffect(() => {
     loadTrustEntries();
   }, []);
+
+  // Realtime refresh when TrustBox changes (no polling)
+  useEffect(() => {
+    if (!token) return;
+    const sock = getSocket(token);
+    if (!sock) return;
+
+    let timer = null;
+    const onTrustBoxUpdated = () => {
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        loadTrustEntries();
+        if (typeof onSeenChange === 'function') onSeenChange();
+      }, 200);
+    };
+
+    sock.on('trustBoxUpdated', onTrustBoxUpdated);
+    return () => {
+      sock.off('trustBoxUpdated', onTrustBoxUpdated);
+      if (timer) clearTimeout(timer);
+    };
+  }, [token, onSeenChange]);
 
   useEffect(() => {
     if (!trustMessage) return;
