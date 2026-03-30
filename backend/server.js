@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const session = require('express-session');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const { Server } = require('socket.io');
@@ -202,9 +204,47 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📝 API documentation: http://localhost:${PORT}/api/health`);
+async function initDbIfEnabled() {
+  const enabled = String(process.env.INIT_DB_ON_BOOT || '').toLowerCase() === 'true';
+  if (!enabled) return;
+
+  try {
+    const schemaPath = path.join(__dirname, 'database', 'schema.sql');
+    const sql = fs.readFileSync(schemaPath, 'utf8');
+    if (sql && sql.trim()) {
+      await pool.query(sql);
+    }
+
+    // The frontend assumes psychologist ID=1 (QuickHelp). Keep it stable.
+    await pool.query(
+      `INSERT INTO Psycholog (id_psychologa, meno, priezvisko, email, je_online)
+       VALUES (1, 'Psychológ', 'Default', 'psycholog@placeholder.local', false)
+       ON CONFLICT (id_psychologa) DO NOTHING`
+    );
+    await pool.query(
+      `SELECT setval(pg_get_serial_sequence('Psycholog','id_psychologa'),
+                     GREATEST((SELECT COALESCE(MAX(id_psychologa), 1) FROM Psycholog), 1))`
+    );
+
+    console.log('✅ DB schema initialized (INIT_DB_ON_BOOT=true)');
+  } catch (e) {
+    console.error('❌ DB init failed:', e?.message || e);
+    throw e;
+  }
+}
+
+async function bootstrap() {
+  await initDbIfEnabled();
+
+  server.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📝 API documentation: http://localhost:${PORT}/api/health`);
+  });
+}
+
+bootstrap().catch((err) => {
+  console.error('❌ Server bootstrap failed:', err);
+  process.exit(1);
 });
 
 server.on('error', (err) => {
