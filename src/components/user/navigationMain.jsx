@@ -10,8 +10,102 @@ export const NavigationMain = () => {
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
   const [trustUnreadCount, setTrustUnreadCount] = useState(null);
+  const [activeSection, setActiveSection] = useState(null);
   const trustReqSeq = useRef(0);
   const chatReqSeq = useRef(0);
+  const scrollSpyRaf = useRef(null);
+
+  const homeSectionIds = useRef([
+    "news",
+    "usertrustbox",
+    "quickhelp",
+    "ReservationSystem",
+    "expert",
+  ]);
+
+  useEffect(() => {
+    if (location.pathname !== "/home") {
+      setActiveSection(null);
+      return;
+    }
+
+    const syncFromHash = () => {
+      const hash = String(window.location.hash || "").replace(/^#/, "");
+      if (hash && homeSectionIds.current.includes(hash)) {
+        setActiveSection(hash);
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname !== "/home") return;
+
+    const computeActive = () => {
+      const menuEl = document.getElementById("menu");
+      const headerOffset = (menuEl?.getBoundingClientRect?.().height || 0) + 12;
+
+      let current = null;
+      let bestTop = -Infinity;
+
+      for (const id of homeSectionIds.current) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+
+        // Prefer the section crossing the probe line under the navbar.
+        if (rect.top <= headerOffset && rect.bottom > headerOffset) {
+          current = id;
+          break;
+        }
+
+        // Otherwise, track the nearest section above the probe line.
+        if (rect.top <= headerOffset && rect.top > bestTop) {
+          bestTop = rect.top;
+          current = id;
+        }
+      }
+
+      if (!current) {
+        // If we're above the first section, highlight the first one.
+        const first = homeSectionIds.current[0];
+        if (first && document.getElementById(first)) current = first;
+      }
+
+      setActiveSection((prev) => (prev === current ? prev : current));
+    };
+
+    const schedule = () => {
+      if (scrollSpyRaf.current != null) return;
+      scrollSpyRaf.current = window.requestAnimationFrame(() => {
+        scrollSpyRaf.current = null;
+        computeActive();
+      });
+    };
+
+    computeActive();
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    // Some layouts scroll on body; scroll doesn't bubble, so capture on document too.
+    document.addEventListener("scroll", schedule, { passive: true, capture: true });
+    document.body?.addEventListener?.("scroll", schedule, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      document.removeEventListener("scroll", schedule, { capture: true });
+      document.body?.removeEventListener?.("scroll", schedule);
+
+      if (scrollSpyRaf.current != null) {
+        window.cancelAnimationFrame(scrollSpyRaf.current);
+        scrollSpyRaf.current = null;
+      }
+    };
+  }, [location.pathname]);
 
   const loadUnreadCount = useCallback(async () => {
     if (!user?.id) return;
@@ -95,6 +189,9 @@ export const NavigationMain = () => {
 
   const handleSectionClick = (id) => async (e) => {
     e.preventDefault();
+
+    setActiveSection(id);
+
     if (id === "quickhelp" && user?.id && String(user?.role || '').toLowerCase() !== 'psycholog' && String(user?.role || '').toLowerCase() !== 'admin') {
       try {
         await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}/mark-seen-psycholog`, { method: "PUT" });
@@ -139,6 +236,8 @@ export const NavigationMain = () => {
     e.preventDefault();
     e.stopPropagation();
 
+    setActiveSection(null);
+
     if (location.pathname !== "/home") {
       navigate("/home");
       setTimeout(scrollToTop, 50);
@@ -178,17 +277,17 @@ export const NavigationMain = () => {
           id="bs-example-navbar-collapse-1"
         >
           <ul className="nav navbar-nav navbar-right">
-            <li>
+            <li className={activeSection === "news" ? "active" : ""}>
               <a href="/home#news" onClick={handleSectionClick("news")} className="page-scroll">
                 Čo je nové
               </a>
             </li>
-            <li>
+            <li className={activeSection === "usertrustbox" ? "active" : ""}>
               <a href="/home#usertrustbox" onClick={handleSectionClick("usertrustbox")} className="page-scroll">
                 Schránka dôvery
               </a>
             </li>
-            <li>
+            <li className={activeSection === "quickhelp" ? "active" : ""}>
               <a href="/home#quickhelp" onClick={handleSectionClick("quickhelp")} className="page-scroll nav-quickhelp-link">
                 Rýchla pomoc
                 {unreadCount > 0 && (
@@ -198,12 +297,12 @@ export const NavigationMain = () => {
                 )}
               </a>
             </li>
-            <li>
+            <li className={activeSection === "ReservationSystem" ? "active" : ""}>
               <a href="/home#ReservationSystem" onClick={handleSectionClick("ReservationSystem")} className="page-scroll">
                 Rezervácia sedení
               </a>
             </li>
-            <li>
+            <li className={activeSection === "expert" ? "active" : ""}>
               <a href="/home#expert" onClick={handleSectionClick("expert")} className="page-scroll">
                 Expertný systém
               </a>

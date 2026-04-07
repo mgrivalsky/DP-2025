@@ -37,6 +37,13 @@ export const UserTrustBox = (props) => {
     loadPublishedMessages();
   }, []);
 
+  const syncCategoryFromEvent = (e) => {
+    const nextValue = e?.target?.value;
+    if (typeof nextValue === "string") {
+      setCategory(nextValue);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -114,7 +121,12 @@ export const UserTrustBox = (props) => {
               </label>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={syncCategoryFromEvent}
+                onInput={syncCategoryFromEvent}
+                onBlur={syncCategoryFromEvent}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
                 required
                 className="user-trustbox__select"
               >
