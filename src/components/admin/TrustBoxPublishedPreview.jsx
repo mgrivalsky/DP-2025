@@ -116,7 +116,7 @@ const TrustBoxPublishedPreview = () => {
                   {hasAnswer && isExpanded && (
                     <div className="trustbox-preview-answerBox">
                       <div className="trustbox-preview-answerTitle">
-                        Odpoveď psychologičky:
+                        Odpoveď psychológa:
                       </div>
                       <div
                         className="trustbox-preview-answerText"

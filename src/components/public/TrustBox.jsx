@@ -107,7 +107,7 @@ export const TrustBox = (props) => {
                   {hasAnswer && isExpanded && (
                     <div className="trustbox-answer-overlay">
                       <div className="trustbox-answer-title">
-                        Odpoveď psychologičky:
+                        Odpoveď psychológa:
                       </div>
                       <div className="trustbox-answer-text">
                         {m.odpoved}
@@ -121,7 +121,7 @@ export const TrustBox = (props) => {
         </div>
 
         <small>
-          *Ak vidíte malú šípku vpravo hore, príspevok obsahuje aj odpoveď psychologičky. Kliknutím šípky ju zobrazíte. <>
+          *Ak vidíte malú šípku vpravo hore, príspevok obsahuje aj odpoveď psychológa. Kliknutím šípky ju zobrazíte. <>
             <br />
           </>
         </small>

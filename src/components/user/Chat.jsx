@@ -261,7 +261,7 @@ export const Chat = () => {
       <NavigationMain />
       <div className="chat-container">
         <header className="chat-header">
-          <h1>💬 Priamy chat s psychologičkou</h1>
+          <h1>💬 Priamy chat s psychológom</h1>
           <p>Komunikujte v reálnom čase</p>
         </header>
 

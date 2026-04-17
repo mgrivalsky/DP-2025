@@ -25,9 +25,8 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Rola a presmerovania
+
   if (requiredRole === 'admin') {
-    // Za admina považujeme aj psychologičku
     if (role === 'admin' || role === 'psycholog') {
       return children;
     }

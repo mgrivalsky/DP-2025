@@ -71,7 +71,7 @@ const ChatIconButton = () => {
   return (
     <button
       className="chat-icon-btn"
-      title="Napísať psychologičke"
+      title="Napísať psychologovi"
       onClick={handleScroll}
     >
       <MessageCircle size={28} />

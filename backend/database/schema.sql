@@ -32,8 +32,11 @@ CREATE TABLE IF NOT EXISTS Schranka_dovery (
     odpoved VARCHAR(1000),
     datum_pridania TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id_psychologa INT REFERENCES Psycholog(id_psychologa) ON DELETE SET NULL,
-    id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
+    id_uzivatela INT REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
 );
+
+-- Migrácia (spätná kompatibilita): umožni anonymné príspevky bez väzby na užívateľa.
+ALTER TABLE IF EXISTS Schranka_dovery ALTER COLUMN id_uzivatela DROP NOT NULL;
 
 -- Tabuľka Novinek
 CREATE TABLE IF NOT EXISTS Novinky (
@@ -91,13 +94,13 @@ CREATE TABLE IF NOT EXISTS Cas_slot (
 );
 
 -- Tabuľka logu použitia expertného systému (dokončenie kroku 4)
--- Ukladá sa čas dokončenia, užívateľ (id_uzivatela) a typ problému z 1. kroku
+-- Slúži iba na anonymizovaný zber štatistík: ukladá sa čas dokončenia a typ problému.
 CREATE TABLE IF NOT EXISTS expetny_system (
     id_dokoncenia SERIAL PRIMARY KEY,
     datum_cas TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    typ_problemu VARCHAR(255) NOT NULL,
-    id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
+    typ_problemu VARCHAR(255) NOT NULL
 );
+
 
 
 

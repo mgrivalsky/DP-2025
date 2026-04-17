@@ -13,15 +13,9 @@ const roleLower = (role) => String(role || '').toLowerCase();
 // Body: { problemType: string }
 router.post('/step4', async (req, res) => {
   try {
-    const userId = Number(req.user?.id);
+    const authed = Number(req.user?.id);
     const role = roleLower(req.user?.role);
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Prihlásenie je povinné' });
-    }
-
-    // Tento log je viazaný na FK do Uzivatel, preto nepovoľujeme psycholog token
-    // (psycholog je v tabuľke Psycholog, nie Uzivatel).
+    if (!authed) return res.status(401).json({ error: 'Prihlásenie je povinné' });
     if (role === 'psycholog') {
       return res.status(403).json({ error: 'Endpoint nie je určený pre psychológa' });
     }
@@ -34,10 +28,10 @@ router.post('/step4', async (req, res) => {
     }
 
     const inserted = await pool.query(
-      `INSERT INTO expetny_system (id_uzivatela, typ_problemu)
-       VALUES ($1, $2)
-       RETURNING id_dokoncenia, datum_cas, id_uzivatela, typ_problemu`,
-      [userId, problemType]
+      `INSERT INTO expetny_system (typ_problemu)
+       VALUES ($1)
+       RETURNING id_dokoncenia, datum_cas, typ_problemu`,
+      [problemType]
     );
 
     return res.status(201).json({ ok: true, row: inserted.rows?.[0] });

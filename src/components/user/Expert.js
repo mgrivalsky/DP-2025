@@ -435,7 +435,7 @@ export default function Expert() {
     setCompletionLogged(false);
   };
 
-  // Pri prvom dosiahnutí kroku 4 (result + history.length===3) ulož do DB čas + študenta + typ problému z 1. kroku.
+  // Pri prvom dosiahnutí kroku 4 (result + history.length===3) ulož do DB čas + typ problému z 1. kroku.
   useEffect(() => {
     const isStep4 = node?.type === "result" && history.length === 3;
     if (!isStep4) return;

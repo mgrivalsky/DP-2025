@@ -41,11 +41,14 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Nemôžete odoslať správu za iného užívateľa' });
     }
 
+    const shouldBeAnonymous = anonymne === true;
+    const dbUserId = shouldBeAnonymous ? null : authedUserId;
+
     const insert = await pool.query(
       `INSERT INTO Schranka_dovery (kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologa, videne_psychologom, videne_uzivatelom)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, videne_psychologom, videne_uzivatelom, id_uzivatela, id_psychologa, datum_pridania` ,
-      [kategoria, obsah_prispevku, anonymne, publikovatelne, authedUserId, id_psychologa, false, true]
+      [kategoria, obsah_prispevku, shouldBeAnonymous, publikovatelne, dbUserId, id_psychologa, false, true]
     );
 
     const created = insert.rows[0];

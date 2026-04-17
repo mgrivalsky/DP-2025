@@ -61,7 +61,7 @@ export const UserTrustBox = (props) => {
         obsah_prispevku: text,
         anonymne: isAnonymous,
         publikovatelne: isPublishable,
-        id_uzivatela: user.id,
+        ...(isAnonymous ? {} : { id_uzivatela: user.id }),
       };
 
       const resp = await fetchWithAuth(`${API_BASE}/api/trust-box`, {
@@ -290,7 +290,7 @@ export const UserTrustBox = (props) => {
                         className="user-trustbox__answerOverlay"
                       >
                         <div className="user-trustbox__answerTitle">
-                          Odpoveď psychologičky:
+                          Odpoveď psychológa:
                         </div>
                         <div className="user-trustbox__answerText">
                           {m.odpoved}
@@ -304,7 +304,7 @@ export const UserTrustBox = (props) => {
           </div>
 
           <small>
-            * Ak vidíte malú šípku vpravo hore, príspevok obsahuje aj odpoveď psychologičky. Kliknutím šípky ju zobrazíte.
+            * Ak vidíte malú šípku vpravo hore, príspevok obsahuje aj odpoveď psychológa. Kliknutím šípky ju zobrazíte.
           </small>
 
           <small className="user-trustbox__footnoteBlock">

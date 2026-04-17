@@ -188,7 +188,7 @@ const QuickHelp = () => {
     <section id="quickhelp">
       <div className="container">
         <div className="section-title text-center">
-          <h2>Rýchla pomoc – Chat s pani psychologičkou</h2>
+          <h2>Rýchla pomoc – Chat so školským psychológom</h2>
           <p>
             Ak sa necítite dobre, máte obavy, stres alebo si jednoducho potrebujete
             s niekým porozprávať, som tu pre vás. Môžeme spolu pokojne prebrať, čo
@@ -209,7 +209,7 @@ const QuickHelp = () => {
             <div className="chat-header">
               <div className="chat-status">
                 <div className={`quickhelp-status-dot ${psychologOnline ? 'online' : 'offline'}`}></div>
-                <span>Pani psychologička – {loading ? "pripája sa..." : psychologOnline ? "online" : "offline"}</span>
+                <span>Školský psychológ – {loading ? "pripája sa..." : psychologOnline ? "online" : "offline"}</span>
               </div>
               <button className="chat-close" onClick={() => setIsOpen(false)}>
                 ✕

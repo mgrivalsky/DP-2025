@@ -168,11 +168,10 @@ router.get('/recent-activities', async (req, res) => {
            'expert'::text AS activity_type,
            e.datum_cas AS ts,
            ('expert:' || e.id_dokoncenia::text) AS id,
-           e.id_uzivatela AS user_id,
-           CONCAT(u.meno, ' ', u.priezvisko) AS user_name,
+           NULL::int AS user_id,
+           NULL::text AS user_name,
            e.typ_problemu AS detail
          FROM expetny_system e
-         JOIN Uzivatel u ON u.id_uzivatela = e.id_uzivatela
 
          UNION ALL
 
@@ -193,10 +192,13 @@ router.get('/recent-activities', async (req, res) => {
            sd.datum_pridania AS ts,
            ('trustbox:' || sd.id_prispevku::text) AS id,
            sd.id_uzivatela AS user_id,
-           CONCAT(u.meno, ' ', u.priezvisko) AS user_name,
+           CASE
+             WHEN u.id_uzivatela IS NULL THEN NULL::text
+             ELSE CONCAT(u.meno, ' ', u.priezvisko)
+           END AS user_name,
            sd.kategoria AS detail
          FROM Schranka_dovery sd
-         JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
+         LEFT JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
        ) x
        ORDER BY x.ts DESC NULLS LAST
        LIMIT $1`,

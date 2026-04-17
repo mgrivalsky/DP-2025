@@ -199,7 +199,7 @@ const ReservationSystem = () => {
       
       {availableDays.length === 0 && (
         <div className="reservation-system__noSlotsNotice">
-          ℹ️ Psychologička zatiaľ nepridala žiadne voľné termíny. Prosím skús to neskôr.
+          ℹ️ Psychológ zatiaľ nepridala žiadne voľné termíny. Prosím skús to neskôr.
         </div>
       )}
       

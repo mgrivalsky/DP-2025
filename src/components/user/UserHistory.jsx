@@ -205,8 +205,8 @@ export default function UserHistory() {
 							<div className="user-history__grid">
 							<SectionCard title="Moje sedenia" count={sessions.length}>
 								<p className="user-history__sectionInfo">
-									Červené orámovanie znamená potvrdené sedenie s pani psychologičkou. Notifikácia vedľa mena zmizne až vtedy,
-									keď psychologička označí sedenie ako dokončené/zrušené.
+									Červené orámovanie znamená potvrdené sedenie so školským psychológom. Notifikácia vedľa mena zmizne až vtedy,
+									keď psychológ označí sedenie ako dokončené/zrušené.
 								</p>
 								<p className="user-history__sectionInfo">
 									Rezerváciu vieš zrušiť kliknutím na tlačidlo „Zrušiť“.
@@ -267,7 +267,7 @@ export default function UserHistory() {
 
 							<SectionCard title="Moje príspevky do schránky dôvery" count={trustBox.length}>
 								<p className="user-history__sectionInfo">
-									Po odoslaní príspevku ho psychologička spracuje a môže pridať odpoveď. Keď sa objaví odpoveď, zobrazí sa
+									Po odoslaní príspevku ho psychológ spracuje a môže pridať odpoveď. Keď sa objaví odpoveď, zobrazí sa
 									ikona oka (👁️) — kliknutím označíš odpoveď ako videnú a tým sa odstráni notifikácia vedľa mena. Tagy pri
 									príspevku ukazujú, či je anonymný a či je zverejnený.
 								</p>
