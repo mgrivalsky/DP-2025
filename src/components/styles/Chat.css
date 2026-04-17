@@ -287,3 +287,83 @@
     font-size: 1.8rem;
   }
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .chat-container {
+  background: #0f172a;
+}
+
+:root[data-theme='dark'] .chat-header {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .chat-main {
+  background: #222;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .chat-sidebar {
+  background: #333;
+  border-right-color: #555;
+}
+
+:root[data-theme='dark'] .chat-sidebar h2 {
+  color: #fff;
+  border-bottom-color: #555;
+}
+
+:root[data-theme='dark'] .no-chats {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .chat-item {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .chat-item:hover {
+  background: #333;
+  border-color: #555;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .chat-item small {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .chat-content {
+  background: #222;
+}
+
+:root[data-theme='dark'] .no-chat-selected {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .chat-container .chat-messages {
+  background: var(--dp-surface-2);
+}
+
+:root[data-theme='dark'] .message.psycholog .message-content {
+  background: var(--dp-surface);
+  border: 1px solid var(--dp-border);
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .message.psycholog .message-time {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .message.user .message-time {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .message-form {
+  background: #222;
+  border-top-color: #555;
+}
+
+:root[data-theme='dark'] .message-input {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}

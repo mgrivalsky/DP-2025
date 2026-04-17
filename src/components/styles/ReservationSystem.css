@@ -235,3 +235,70 @@
 		font-size: 18px;
 	}
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] #ReservationSystem {
+	background: #0f172a;
+	color: #ccc;
+}
+
+:root[data-theme='dark'] #ReservationSystem h2,
+:root[data-theme='dark'] #ReservationSystem h4 {
+	color: #fff;
+	text-shadow: none;
+}
+
+:root[data-theme='dark'] .reservation-system__intro {
+	color: #ccc;
+}
+
+:root[data-theme='dark'] .calendar,
+:root[data-theme='dark'] .times {
+	background: #222;
+	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='dark'] .react-calendar__navigation button {
+	color: #ccc;
+}
+
+:root[data-theme='dark'] .react-calendar__month-view__weekdays {
+	color: #ccc;
+}
+
+:root[data-theme='dark'] .react-calendar__tile {
+	color: #fff;
+}
+
+:root[data-theme='dark'] .react-calendar__tile.available-day {
+	background-color: #333;
+	color: #fff;
+}
+
+:root[data-theme='dark'] .react-calendar__tile:disabled {
+	background-color: #222;
+	color: #555;
+}
+
+:root[data-theme='dark'] .selected-info {
+	color: #ccc;
+}
+
+:root[data-theme='dark'] .time-buttons button {
+	background-color: #222;
+	border-color: #555;
+	color: #fff;
+}
+
+:root[data-theme='dark'] .time-buttons button:hover {
+	background-color: #0066ff;
+	border-color: #0066ff;
+	color: #fff;
+}
+
+:root[data-theme='dark'] .time-buttons button.selected {
+	background-color: #0066ff;
+	border-color: #0066ff;
+	color: #fff;
+	box-shadow: 0 0 10px rgba(0, 102, 255, 0.4);
+}

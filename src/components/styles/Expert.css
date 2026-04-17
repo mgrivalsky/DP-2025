@@ -236,3 +236,53 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(94, 114, 228, 0.4);
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .expert-system {
+  background: #0f172a;
+}
+
+:root[data-theme='dark'] .expert-system__title,
+:root[data-theme='dark'] .expert-system__resultTitle {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .expert-system__subtitle,
+:root[data-theme='dark'] .expert-system__questionText,
+:root[data-theme='dark'] .expert-system__rec {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .expert-system__card {
+  background: #222;
+}
+
+:root[data-theme='dark'] .expert-option-btn {
+  background: #333;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .expert-system__result {
+  background: #333;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .expert-system__rec:not(:last-child),
+:root[data-theme='dark'] .expert-system__footer {
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .expert-system__safety {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .expert-system__safetyText {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .expert-system__btnBack {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}

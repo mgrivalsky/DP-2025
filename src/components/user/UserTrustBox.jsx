@@ -215,7 +215,7 @@ export const UserTrustBox = (props) => {
 
         <div className="user-trustbox__publishedSection">
           <h3 className="text-secondary user-trustbox__publishedTitle">
-            📬 Inšpirácia od našich študentov:
+            📬 Príspevky od našich študentov:
           </h3>
           <div className="row">
             {props.data &&

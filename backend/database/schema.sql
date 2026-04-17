@@ -35,8 +35,6 @@ CREATE TABLE IF NOT EXISTS Schranka_dovery (
     id_uzivatela INT REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
 );
 
--- Migrácia (spätná kompatibilita): umožni anonymné príspevky bez väzby na užívateľa.
-ALTER TABLE IF EXISTS Schranka_dovery ALTER COLUMN id_uzivatela DROP NOT NULL;
 
 -- Tabuľka Novinek
 CREATE TABLE IF NOT EXISTS Novinky (

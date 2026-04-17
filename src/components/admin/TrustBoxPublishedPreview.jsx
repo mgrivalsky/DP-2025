@@ -71,39 +71,14 @@ const TrustBoxPublishedPreview = () => {
                       aria-label={isExpanded ? "Zbaliť odpoveď" : "Rozbaliť odpoveď"}
                       aria-expanded={isExpanded}
                       onClick={() => setExpandedPublishedId(isExpanded ? null : publishedId)}
-                      style={{
-                        position: "absolute",
-                        top: 2,
-                        right: 2,
-                        width: 22,
-                        height: 22,
-                        borderRadius: 999,
-                        border: "1px solid rgba(0,0,0,0.10)",
-                        background: "#fff",
-                        padding: 0,
-                        cursor: "pointer",
-                        lineHeight: 1,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        color: "#334155",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      className="trustbox-preview-expandBtn"
                     >
                       {isExpanded ? "▲" : "▼"}
                     </button>
                   )}
 
                   <div
-                    style={{
-                      whiteSpace: "pre-line",
-                      color: "#334155",
-                      lineHeight: 1.7,
-                      paddingRight: hasAnswer ? 26 : 0,
-                      overflowWrap: "anywhere",
-                      wordBreak: "break-word",
-                    }}
+                    className={`trustbox-preview-text${hasAnswer ? " has-answer" : ""}`}
                   >
                     “{hasAnswer ? previewText : textValue}”
                   </div>

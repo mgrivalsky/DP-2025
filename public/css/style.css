@@ -364,6 +364,7 @@ hr {
   border-radius: 999px;
   padding: 8px 12px !important;
   font-weight: 700;
+  text-transform: none !important;
   text-decoration: none !important;
   display: inline-block !important;
 }
@@ -478,6 +479,10 @@ a:focus,
 }
 .intro .overlay {
   background: rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme='dark'] .intro .overlay {
+  background: rgba(0, 0, 0, 0.6);
 }
 .intro h1 {
   font-family: "Raleway", sans-serif;
@@ -799,6 +804,12 @@ header .intro-text {
   font-size: 15px;
   font-weight: 600;
   color: #666;
+}
+
+.trustbox-published-heading {
+  margin: 30px 0 15px;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
 

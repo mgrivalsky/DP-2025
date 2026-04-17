@@ -47,13 +47,16 @@
 	height: 420px;
 }
 
-.chat-header {
+#quickhelp .chat-box .chat-header {
 	background-color: #3b82f6;
 	color: white;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	padding: 12px 16px;
+	margin: 0;
+	text-align: left;
+	width: 100%;
 }
 
 .chat-status {
@@ -124,7 +127,7 @@
 	}
 }
 
-.chat-close {
+#quickhelp .chat-box .chat-close {
 	background: transparent;
 	color: white;
 	border: none;
@@ -161,14 +164,18 @@
 	align-self: flex-end;
 }
 
-.chat-input {
+
+#quickhelp .chat-box .chat-input {
 	display: flex;
+	align-items: center;
+	gap: 8px;
 	border-top: 1px solid #e5e7eb;
 	padding: 8px;
 	background: white;
 }
 
-.chat-input input {
+
+#quickhelp .chat-box .chat-input input {
 	flex: 1;
 	border: none;
 	outline: none;
@@ -176,7 +183,8 @@
 	font-size: 14px;
 }
 
-.chat-input button {
+
+#quickhelp .chat-box .chat-input button {
 	background: #3b82f6;
 	color: white;
 	border: none;
@@ -186,7 +194,8 @@
 	transition: background 0.2s;
 }
 
-.chat-input button:hover {
+
+#quickhelp .chat-box .chat-input button:hover {
 	background: #2563eb;
 }
 
@@ -270,4 +279,51 @@
 		opacity: 1;
 		transform: translateY(0);
 	}
+}
+
+/* Dark mode overrides */
+:root[data-theme='dark'] #quickhelp {
+	background: #0f172a;
+}
+
+:root[data-theme='dark'] #quickhelp .section-title h2 {
+	color: #fff;
+}
+
+:root[data-theme='dark'] #quickhelp .section-title p {
+	color: #ccc;
+}
+
+:root[data-theme='dark'] .chat-box {
+	background: #222;
+	border: 1px solid #555;
+}
+
+:root[data-theme='dark'] #quickhelp .chat-box .chat-messages {
+	background: var(--dp-surface-2);
+}
+
+:root[data-theme='dark'] #quickhelp .chat-box .psych-msg {
+	background: var(--dp-surface);
+	border: 1px solid var(--dp-border);
+	color: var(--dp-text);
+}
+
+:root[data-theme='dark'] #quickhelp .chat-box .chat-input {
+	background: #222;
+	border-top-color: #555;
+}
+
+:root[data-theme='dark'] #quickhelp .chat-box .chat-input input {
+	background: #333;
+	color: #fff;
+}
+
+:root[data-theme='dark'] .psycholog-chat-icon-btn {
+	background-color: #222;
+	color: #fff;
+}
+
+:root[data-theme='dark'] .psycholog-chat-icon-btn:hover {
+	background-color: #333;
 }

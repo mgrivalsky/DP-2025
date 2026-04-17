@@ -211,7 +211,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  background: var(--dp-surface-2);
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
 }
@@ -376,4 +376,117 @@
   .psycholog-message {
     max-width: 85%;
   }
+}
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .psycholog-chat-container h2 {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .psycholog-chat-main {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-chats-list {
+  background: #333;
+  border-right-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-chat-item {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-chat-item:hover {
+  background: #333;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-chat-item.active {
+  background: #3b82f6;
+  color: #fff;
+  border-left-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+:root[data-theme='dark'] .psycholog-chat-item.active:hover {
+  background: #2563eb;
+  border-left-color: #2563eb;
+  border-color: #2563eb;
+}
+
+:root[data-theme='dark'] .psycholog-chat-item.active .psycholog-chat-email,
+:root[data-theme='dark'] .psycholog-chat-item.active .psycholog-chat-time,
+:root[data-theme='dark'] .psycholog-chat-item.active .psycholog-chat-date {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme='dark'] .psycholog-chat-item strong {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .psycholog-chat-email,
+:root[data-theme='dark'] .psycholog-chat-time,
+:root[data-theme='dark'] .psycholog-chat-date,
+:root[data-theme='dark'] .psycholog-chat-container .no-chats {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .psycholog-chat-content {
+  background: #222;
+}
+
+:root[data-theme='dark'] .psycholog-chat-header {
+  background: #222;
+  border-bottom-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-chat-header h3 {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .psycholog-chat-header small {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .psycholog-chat-container .no-chat-selected {
+  background: #222;
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .psycholog-messages {
+  background: var(--dp-surface-2);
+}
+
+:root[data-theme='dark'] .psycholog-message.user .psycholog-message-content {
+  background: #222;
+  color: #fff;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-message.user .psycholog-message-time,
+:root[data-theme='dark'] .psycholog-message.psycholog .psycholog-message-time {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .psycholog-message-form {
+  background: #222;
+  border-top-color: #555;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .psycholog-message-input {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .psycholog-message-input:focus {
+  background: #333;
+}
+
+:root[data-theme='dark'] .psycholog-chats-list::-webkit-scrollbar-thumb,
+:root[data-theme='dark'] .psycholog-messages::-webkit-scrollbar-thumb {
+  background: #555;
 }

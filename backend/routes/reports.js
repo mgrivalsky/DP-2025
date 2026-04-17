@@ -159,10 +159,13 @@ router.get('/recent-activities', async (req, res) => {
       return res.status(403).json({ error: 'Nemáte oprávnenie' });
     }
 
+    const limitParam = String(req.query.limit || '').trim().toLowerCase();
+    const isAll = limitParam === 'all';
+
     const limitRaw = Number(req.query.limit);
     const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 10;
 
-    const q = await pool.query(
+    const baseSql =
       `SELECT * FROM (
          SELECT
            'expert'::text AS activity_type,
@@ -200,10 +203,11 @@ router.get('/recent-activities', async (req, res) => {
          FROM Schranka_dovery sd
          LEFT JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
        ) x
-       ORDER BY x.ts DESC NULLS LAST
-       LIMIT $1`,
-      [limit]
-    );
+       ORDER BY x.ts DESC NULLS LAST`;
+
+    const q = isAll
+      ? await pool.query(`${baseSql}\nLIMIT ALL`)
+      : await pool.query(`${baseSql}\nLIMIT $1`, [limit]);
 
     return res.json({ items: q.rows || [] });
   } catch (error) {

@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 export const NavigationMain = () => {
   const { logout, user, fetchWithAuth, confirmedSessionsCount } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -276,7 +278,7 @@ export const NavigationMain = () => {
           className="collapse navbar-collapse"
           id="bs-example-navbar-collapse-1"
         >
-          <ul className="nav navbar-nav navbar-right">
+          <ul className="nav navbar-nav navbar-right dp-navbar-right">
             <li className={activeSection === "news" ? "active" : ""}>
               <a href="/home#news" onClick={handleSectionClick("news")} className="page-scroll">
                 Čo je nové
@@ -333,6 +335,18 @@ export const NavigationMain = () => {
                   );
                 })()}
               </Link>
+            </li>
+            <li className="dp-navbar-theme-toggle">
+              <button
+                type="button"
+                className="theme-toggle-btn theme-toggle-btn--nav"
+                onClick={toggleTheme}
+                aria-label={isDark ? "Prepnúť na svetlý režim" : "Prepnúť na tmavý režim"}
+                title={isDark ? "Svetlý režim" : "Tmavý režim"}
+              >
+                <i className={`fa ${isDark ? "fa-sun-o" : "fa-moon-o"}`} aria-hidden="true" />
+                <span className="sr-only">{isDark ? "Svetlý režim" : "Tmavý režim"}</span>
+              </button>
             </li>
           </ul>
         </div>

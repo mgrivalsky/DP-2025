@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageCircle, Send } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../styles/PsychologChatFloating.css';
 import '../styles/QuickHelp.css';
@@ -288,7 +288,7 @@ const PsychologChatFloating = () => {
                   }}
                   title="Späť na zoznam"
                 >
-                  ←
+                  <ArrowLeft size={26} strokeWidth={3} />
                 </button>
               )}
               <div>

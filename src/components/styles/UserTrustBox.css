@@ -251,3 +251,50 @@
   display: block;
   margin-bottom: 100px;
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] #usertrustbox {
+  background: #0f172a;
+}
+
+:root[data-theme='dark'] .user-trustbox__title,
+:root[data-theme='dark'] .user-trustbox__formTitle,
+:root[data-theme='dark'] .user-trustbox__publishedTitle,
+:root[data-theme='dark'] .user-trustbox__answerTitle {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-trustbox__intro,
+:root[data-theme='dark'] .user-trustbox__howItWorks,
+:root[data-theme='dark'] .user-trustbox__publishedText,
+:root[data-theme='dark'] .user-trustbox__answerText {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .user-trustbox__howItWorks {
+  background-color: #333;
+}
+
+:root[data-theme='dark'] .user-trustbox__publishedSection {
+  border-top-color: #555;
+}
+
+:root[data-theme='dark'] .user-trustbox__expandBtn {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-trustbox__answerOverlay {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .user-trustbox__toggle {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .user-trustbox__toggleLabelText {
+  color: #fff;
+}

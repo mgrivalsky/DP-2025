@@ -8,7 +8,7 @@ const AdminOverview = () => {
   const [reservations, setReservations] = useState([]);
   const [slots, setSlots] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
-  const [activityLimit, setActivityLimit] = useState(10);
+  const [activityLimit, setActivityLimit] = useState('10');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,10 +22,14 @@ const AdminOverview = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      const activityUrl =
+        String(activityLimit) === 'all'
+          ? `${API_BASE}/api/reports/recent-activities?limit=all`
+          : `${API_BASE}/api/reports/recent-activities?limit=${Number(activityLimit) || 10}`;
       const [resResp, slotsResp, actResp] = await Promise.all([
         fetchWithToken(`${API_BASE}/api/reservations`, token),
         fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token),
-        fetchWithToken(`${API_BASE}/api/reports/recent-activities?limit=${activityLimit}`, token)
+        fetchWithToken(activityUrl, token)
       ]);
       
       const resData = await resResp.json();
@@ -44,8 +48,12 @@ const AdminOverview = () => {
 
   const loadActivities = async (limit) => {
     try {
+      const activityUrl =
+        String(limit) === 'all'
+          ? `${API_BASE}/api/reports/recent-activities?limit=all`
+          : `${API_BASE}/api/reports/recent-activities?limit=${Number(limit) || 10}`;
       const actResp = await fetchWithToken(
-        `${API_BASE}/api/reports/recent-activities?limit=${Number(limit) || 10}`,
+        activityUrl,
         token
       );
       const actData = await actResp.json();
@@ -177,12 +185,13 @@ const AdminOverview = () => {
               <select
                 className="admin-select admin-select-inline"
                 value={activityLimit}
-                onChange={(e) => setActivityLimit(parseInt(e.target.value, 10))}
+                onChange={(e) => setActivityLimit(e.target.value)}
                 aria-label="Počet zobrazených aktivít"
               >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="all">Všetky</option>
               </select>
             </div>
           </div>

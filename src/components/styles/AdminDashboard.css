@@ -38,11 +38,19 @@
   color: #c82333 !important;
 }
 
-.admin-dashboard-container .user-name {
-  color: white;
-  font-weight: 600;
-  padding: 15px;
+.admin-dashboard-container #menu .user-name {
+  position: relative;
+  top: 0;
   display: inline-block;
+  background: #608dfd;
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  margin: 9px 12px 0 !important;
 }
 
 .admin-content {
@@ -88,7 +96,7 @@
 
 .admin-user-name {
   position: relative;
-  top: 4px;
+  top: 0;
 }
 
 .admin-confirm-overlay {
@@ -165,6 +173,34 @@
 
 .admin-confirm-btn-danger {
   background: #dc3545;
+}
+
+/* Dark mode: Confirm dialog */
+:root[data-theme='dark'] .admin-confirm-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:root[data-theme='dark'] .admin-confirm-modal {
+  background: var(--dp-surface);
+  border: 1px solid var(--dp-border);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme='dark'] .admin-confirm-header {
+  border-bottom-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .admin-confirm-title {
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .admin-confirm-text {
+  color: var(--dp-muted);
+}
+
+:root[data-theme='dark'] .admin-confirm-actions {
+  background: var(--dp-surface-2);
+  border-top: 1px solid var(--dp-border);
 }
 
 .stats-grid {
@@ -471,4 +507,87 @@ table tbody tr:last-child {
   .admin-content {
     padding: 1rem;
   }
+}
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .admin-preview-window {
+  border-color: #555;
+  background: #222;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .admin-preview-content {
+  background: #0f172a;
+}
+
+:root[data-theme='dark'] .admin-preview-window #menu .user-section {
+  border-left-color: #555 !important;
+}
+
+:root[data-theme='dark'] .stat-card,
+:root[data-theme='dark'] .admin-section {
+  background: var(--dp-surface);
+  border: 1px solid var(--dp-border);
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .admin-section h2,
+:root[data-theme='dark'] .stat-info h3 {
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .stat-info p {
+  color: var(--dp-muted);
+}
+
+:root[data-theme='dark'] .reservation-item {
+  background: var(--dp-surface-2);
+  border: 1px solid var(--dp-border);
+  border-left: 4px solid #667eea;
+}
+
+:root[data-theme='dark'] .activity-item {
+  background: var(--dp-surface-2);
+  border: 1px solid var(--dp-border);
+  border-left: 4px solid #28a745;
+}
+
+:root[data-theme='dark'] .reservation-info strong,
+:root[data-theme='dark'] .activity-item strong {
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .reservation-info p,
+:root[data-theme='dark'] .activity-item p,
+:root[data-theme='dark'] .reservation-time,
+:root[data-theme='dark'] .activity-time {
+  color: var(--dp-muted);
+}
+
+:root[data-theme='dark'] table {
+  background: #222;
+  border-color: #555;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] table thead tr {
+  background: #333;
+}
+
+:root[data-theme='dark'] table thead th {
+  border-bottom-color: #555;
+  border-right-color: #555;
+}
+
+:root[data-theme='dark'] table tbody tr {
+  border-bottom-color: #555;
+}
+
+:root[data-theme='dark'] table tbody tr:hover {
+  background-color: #333;
+}
+
+:root[data-theme='dark'] table tbody td {
+  color: #fff;
+  border-right-color: #555;
 }

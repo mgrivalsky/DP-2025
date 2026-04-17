@@ -293,3 +293,71 @@
   color: #4d5b7c;
   line-height: 1.5;
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .user-history__page {
+  background: #0f172a;
+}
+
+:root[data-theme='dark'] .user-history__title {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-history__subtitle,
+:root[data-theme='dark'] .user-history__sectionInfo,
+:root[data-theme='dark'] .user-history__empty {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .user-history__userName {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .user-history__logoutBtn {
+  background: #222;
+  border-color: #555;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-history__loadingCard,
+:root[data-theme='dark'] .user-history__card {
+  background: #222;
+  border-color: #555;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-history__cardTitle,
+:root[data-theme='dark'] .user-history__itemTitle,
+:root[data-theme='dark'] .user-history__trustCategory,
+:root[data-theme='dark'] .user-history__trustAnswerTitle {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-history__itemMeta,
+:root[data-theme='dark'] .user-history__trustText,
+:root[data-theme='dark'] .user-history__trustAnswerText,
+:root[data-theme='dark'] .user-history__psycholog {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .user-history__itemRow,
+:root[data-theme='dark'] .user-history__trustItem {
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .user-history__trustSeenBtn {
+  background: #222;
+  border-color: #555;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .user-history__trustAnswer {
+  background: #333;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .user-history__status--pending,
+:root[data-theme='dark'] .user-history__status--vytvorena {
+  color: #ccc;
+  background: #333;
+}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
 export const AdminHeader = ({ 
   activeTab, 
@@ -9,6 +10,8 @@ export const AdminHeader = ({
   reservationUnreadTotal,
   trustBoxUnreadTotal
 }) => {
+  const { isDark, toggleTheme } = useTheme();
+
   return (
     <nav id="menu" className="navbar navbar-default navbar-fixed-top">
       <div className="container">
@@ -34,7 +37,7 @@ export const AdminHeader = ({
         </div>
 
         <div className="collapse navbar-collapse" id="bs-admin-navbar-collapse">
-          <ul className="nav navbar-nav navbar-right">
+          <ul className="nav navbar-nav navbar-right dp-navbar-right">
             <li>
               <a 
                 onClick={() => setActiveTab('overview')} 
@@ -113,6 +116,18 @@ export const AdminHeader = ({
             </li>
             <li>
               <span className="user-name admin-user-name">👤 {user?.name}</span>
+            </li>
+            <li className="dp-navbar-theme-toggle">
+              <button
+                type="button"
+                className="theme-toggle-btn theme-toggle-btn--nav"
+                onClick={toggleTheme}
+                aria-label={isDark ? "Prepnúť na svetlý režim" : "Prepnúť na tmavý režim"}
+                title={isDark ? "Svetlý režim" : "Tmavý režim"}
+              >
+                <i className={`fa ${isDark ? "fa-sun-o" : "fa-moon-o"}`} aria-hidden="true" />
+                <span className="sr-only">{isDark ? "Svetlý režim" : "Tmavý režim"}</span>
+              </button>
             </li>
           </ul>
         </div>

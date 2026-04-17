@@ -7,6 +7,363 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.theme-toggle-btn {
+  cursor: pointer;
+}
+
+.theme-toggle-btn--nav {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--dp-border);
+  /* Inverse colors so: light mode (moon) = dark bg, dark mode (sun) = light bg */
+  background: var(--dp-text);
+  color: var(--dp-bg);
+  line-height: 1;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.theme-toggle-btn--nav:hover,
+.theme-toggle-btn--nav:focus {
+  filter: brightness(0.95);
+  outline: none;
+}
+
+.theme-toggle-btn--nav .fa {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Better spacing when used as last navbar item */
+.navbar .theme-toggle-btn--nav {
+  margin-left: 8px;
+}
+
+@media (min-width: 768px) {
+  /* Dock toggle to the far-right of the whole fixed-top bar */
+  .navbar-fixed-top .dp-navbar-right > li.dp-navbar-theme-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+  }
+
+  /* Reserve space so rightmost nav items don't sit under the toggle */
+  .navbar-fixed-top .dp-navbar-right.navbar-right {
+    margin-right: 56px;
+  }
+}
+
+:root {
+  --dp-bg: #fff;
+  --dp-surface: #fff;
+  --dp-surface-2: #f8fafc;
+  --dp-border: #e2e8f0;
+  --dp-text: #111;
+  --dp-muted: #555;
+}
+
+:root[data-theme='dark'] {
+  --dp-bg: #0f172a;
+  --dp-surface: #222;
+  --dp-surface-2: #333;
+  --dp-border: #555;
+  --dp-text: #fff;
+  --dp-muted: #ccc;
+}
+
+:root[data-theme='dark'] body {
+  background-color: var(--dp-bg);
+  color: var(--dp-muted);
+}
+
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4,
+:root[data-theme='dark'] h5,
+:root[data-theme='dark'] h6 {
+  color: var(--dp-text);
+}
+
+/* Public + user home sections: make section boundaries visible in dark mode */
+:root[data-theme='dark'] #about,
+:root[data-theme='dark'] #services,
+:root[data-theme='dark'] #trustbox,
+:root[data-theme='dark'] #portfolio,
+:root[data-theme='dark'] #contact,
+:root[data-theme='dark'] #footer,
+:root[data-theme='dark'] #news,
+:root[data-theme='dark'] #usertrustbox,
+:root[data-theme='dark'] #quickhelp,
+:root[data-theme='dark'] #ReservationSystem,
+:root[data-theme='dark'] #expert {
+  border-top: 1px solid var(--dp-border);
+}
+
+/* Alternate backgrounds so sections don't blend together */
+:root[data-theme='dark'] #about,
+:root[data-theme='dark'] #trustbox,
+:root[data-theme='dark'] #contact,
+:root[data-theme='dark'] #footer,
+:root[data-theme='dark'] #news,
+:root[data-theme='dark'] #quickhelp,
+:root[data-theme='dark'] #expert {
+  background: var(--dp-bg) !important;
+  color: var(--dp-muted) !important;
+}
+
+:root[data-theme='dark'] #services,
+:root[data-theme='dark'] #portfolio,
+:root[data-theme='dark'] #usertrustbox,
+:root[data-theme='dark'] #ReservationSystem {
+  background: var(--dp-surface-2) !important;
+  color: var(--dp-muted) !important;
+}
+
+:root[data-theme='dark'] #about h2,
+:root[data-theme='dark'] #about h3,
+:root[data-theme='dark'] #services h2,
+:root[data-theme='dark'] #services h3,
+:root[data-theme='dark'] #team h2,
+:root[data-theme='dark'] #team h3,
+:root[data-theme='dark'] #trustbox h2,
+:root[data-theme='dark'] #trustbox h3,
+:root[data-theme='dark'] #contact h2,
+:root[data-theme='dark'] #contact h3,
+:root[data-theme='dark'] #footer,
+:root[data-theme='dark'] #footer p {
+  color: var(--dp-text) !important;
+}
+
+:root[data-theme='dark'] #about p,
+:root[data-theme='dark'] #services p,
+:root[data-theme='dark'] #team p,
+:root[data-theme='dark'] #trustbox p,
+:root[data-theme='dark'] #contact p {
+  color: var(--dp-muted) !important;
+}
+
+/* Bootstrap-ish surface defaults */
+:root[data-theme='dark'] .panel,
+:root[data-theme='dark'] .panel-heading,
+:root[data-theme='dark'] .panel-body,
+:root[data-theme='dark'] .well,
+:root[data-theme='dark'] .modal-content,
+:root[data-theme='dark'] .modal-header,
+:root[data-theme='dark'] .modal-footer,
+:root[data-theme='dark'] .dropdown-menu,
+:root[data-theme='dark'] .list-group-item,
+:root[data-theme='dark'] .table {
+  background-color: var(--dp-surface) !important;
+  color: var(--dp-text) !important;
+  border-color: var(--dp-border) !important;
+}
+
+:root[data-theme='dark'] .table > thead > tr > th,
+:root[data-theme='dark'] .table > tbody > tr > th,
+:root[data-theme='dark'] .table > tbody > tr > td {
+  border-color: var(--dp-border) !important;
+}
+
+:root[data-theme='dark'] .table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: var(--dp-surface-2) !important;
+}
+
+:root[data-theme='dark'] .dropdown-menu > li > a {
+  color: var(--dp-text) !important;
+}
+
+:root[data-theme='dark'] .dropdown-menu > li > a:hover,
+:root[data-theme='dark'] .dropdown-menu > li > a:focus {
+  background-color: var(--dp-surface-2) !important;
+  color: var(--dp-text) !important;
+}
+
+:root[data-theme='dark'] .text-muted {
+  color: var(--dp-muted) !important;
+}
+
+:root[data-theme='dark'] .trustbox-content p,
+:root[data-theme='dark'] .trustbox-meta {
+  color: var(--dp-muted) !important;
+}
+
+/* TrustBox (public) published posts: match user dark-mode styling */
+:root[data-theme='dark'] .trustbox-expand-btn {
+  background: var(--dp-surface-2);
+  border-color: var(--dp-border);
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .trustbox-published-text {
+  color: var(--dp-muted);
+}
+
+:root[data-theme='dark'] .trustbox-answer-overlay {
+  background: var(--dp-surface);
+  border-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .trustbox-answer-title {
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .trustbox-answer-text {
+  color: var(--dp-muted);
+}
+
+:root[data-theme='dark'] #menu.navbar-default {
+  background-color: #222 !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='dark'] #menu a.navbar-brand {
+  color: #fff !important;
+}
+
+:root[data-theme='dark'] #menu.navbar-default .navbar-nav > li > a {
+  color: #ccc !important;
+}
+
+:root[data-theme='dark'] #menu.navbar-default .navbar-nav > li > a:hover,
+:root[data-theme='dark'] #menu.navbar-default .navbar-nav > li > a:focus {
+  color: #fff !important;
+}
+
+/* User name pill in main navigation */
+:root[data-theme='dark'] #menu.navbar-default .navbar-nav > li > a.nav-user-pill {
+  color: #fff !important;
+}
+
+:root[data-theme='dark'] #menu.navbar-default .navbar-toggle .icon-bar {
+  background-color: #ccc;
+}
+
+:root[data-theme='dark'] .form-control,
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] input[type='text'],
+:root[data-theme='dark'] input[type='email'],
+:root[data-theme='dark'] input[type='password'] {
+  background-color: #333 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-theme='dark'] .form-control::placeholder,
+:root[data-theme='dark'] textarea::placeholder,
+:root[data-theme='dark'] input::placeholder {
+  color: #999;
+}
+
+:root[data-theme='dark'] .btn-default {
+  background-color: #333 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-theme='dark'] .btn-default:hover,
+:root[data-theme='dark'] .btn-default:focus {
+  background-color: #444 !important;
+  border-color: #555 !important;
+}
+
+/* Admin overrides */
+:root[data-theme='dark'] .admin-dashboard-container {
+  background: #0f172a !important;
+}
+
+:root[data-theme='dark'] .admin-dashboard-container .navbar {
+  background: #222 !important;
+  border-bottom: 2px solid #333;
+}
+
+:root[data-theme='dark'] .admin-dashboard-container .navbar-brand,
+:root[data-theme='dark'] .admin-dashboard-container .nav > li > a,
+:root[data-theme='dark'] .admin-dashboard-container .nav > li > a {
+  color: #ccc !important;
+}
+
+/* Admin header: user name should be white */
+:root[data-theme='dark'] .admin-dashboard-container .user-name {
+  color: #fff !important;
+}
+
+:root[data-theme='dark'] .admin-section,
+:root[data-theme='dark'] .stat-card,
+:root[data-theme='dark'] .admin-confirm-modal {
+  background: var(--dp-surface) !important;
+  color: var(--dp-text);
+  border: 1px solid var(--dp-border);
+}
+
+:root[data-theme='dark'] .admin-section h2,
+:root[data-theme='dark'] .stat-card h3 {
+  color: #fff !important;
+}
+
+/* Login page overrides */
+:root[data-theme='dark'] .login-container {
+  background: #0f172a !important;
+}
+
+:root[data-theme='dark'] .login-box {
+  background: #222 !important;
+}
+
+:root[data-theme='dark'] .login-box h2,
+:root[data-theme='dark'] .login-info__title,
+:root[data-theme='dark'] .test-credentials strong {
+  color: #fff !important;
+}
+
+:root[data-theme='dark'] .login-box label,
+:root[data-theme='dark'] .login-info__text,
+:root[data-theme='dark'] .login-info__note,
+:root[data-theme='dark'] .test-credentials,
+:root[data-theme='dark'] .divider {
+  color: #ccc !important;
+}
+
+:root[data-theme='dark'] .login-info,
+:root[data-theme='dark'] .test-credentials p {
+  background: #333 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+}
+
+/* User trust box overrides (key readability bits) */
+:root[data-theme='dark'] .user-trustbox__title,
+:root[data-theme='dark'] .user-trustbox__formTitle,
+:root[data-theme='dark'] .user-trustbox__label {
+  color: #fff !important;
+}
+
+:root[data-theme='dark'] .user-trustbox__intro {
+  color: #ccc !important;
+}
+
+:root[data-theme='dark'] .user-trustbox__formCard {
+  background: #222 !important;
+}
+
+:root[data-theme='dark'] .user-trustbox__select,
+:root[data-theme='dark'] .user-trustbox__textarea,
+:root[data-theme='dark'] .user-trustbox__toggle {
+  background-color: #333 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

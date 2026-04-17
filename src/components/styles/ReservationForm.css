@@ -127,3 +127,32 @@
     font-size: 1.6rem;
   }
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .reservation-form-container {
+  background: #222;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .reservation-form-container h2 {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .reservation-form-user-info {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .reservation-form-user-info strong {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .reservation-form-label {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .reservation-form-input,
+:root[data-theme='dark'] .reservation-form-textarea {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}

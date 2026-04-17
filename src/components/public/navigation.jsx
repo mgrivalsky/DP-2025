@@ -1,7 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTheme } from "../../context/ThemeContext";
 
 export const Navigation = () => {
+  const { isDark, toggleTheme } = useTheme();
+
   const scrollToId = (id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -68,7 +71,7 @@ export const Navigation = () => {
           className="collapse navbar-collapse"
           id="bs-example-navbar-collapse-1"
         >
-          <ul className="nav navbar-nav navbar-right">
+          <ul className="nav navbar-nav navbar-right dp-navbar-right">
             <li>
               <a href="#about" onClick={handleSectionClick("about")} className="page-scroll">
                 O nás
@@ -98,6 +101,18 @@ export const Navigation = () => {
               <Link to="/login" className="page-scroll">
                 Prihlásenie
               </Link>
+            </li>
+            <li className="dp-navbar-theme-toggle">
+              <button
+                type="button"
+                className="theme-toggle-btn theme-toggle-btn--nav"
+                onClick={toggleTheme}
+                aria-label={isDark ? "Prepnúť na svetlý režim" : "Prepnúť na tmavý režim"}
+                title={isDark ? "Svetlý režim" : "Tmavý režim"}
+              >
+                <i className={`fa ${isDark ? "fa-sun-o" : "fa-moon-o"}`} aria-hidden="true" />
+                <span className="sr-only">{isDark ? "Svetlý režim" : "Tmavý režim"}</span>
+              </button>
             </li>
           </ul>
         </div>

@@ -697,3 +697,163 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+.trustbox-preview-expandBtn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 11px;
+  font-weight: 800;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trustbox-preview-text {
+  white-space: pre-line;
+  color: #334155;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.trustbox-preview-text.has-answer {
+  padding-right: 26px;
+}
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .activities-header {
+  border-bottom-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .admin-count-right,
+:root[data-theme='dark'] .overview-reservation-date,
+:root[data-theme='dark'] .trust-preview-note {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .admin-select,
+:root[data-theme='dark'] .admin-input,
+:root[data-theme='dark'] .admin-textarea,
+:root[data-theme='dark'] .reports-month-input {
+  background: var(--dp-surface-2);
+  color: var(--dp-text);
+  border-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .admin-form-card,
+:root[data-theme='dark'] .reports-toolbar,
+:root[data-theme='dark'] .report-card-head,
+:root[data-theme='dark'] .trust-stats-inline,
+:root[data-theme='dark'] .trust-entry-header,
+:root[data-theme='dark'] .trust-answer {
+  background: var(--dp-surface-2);
+  border-color: var(--dp-border);
+  color: var(--dp-text);
+}
+
+:root[data-theme='dark'] .report-card,
+:root[data-theme='dark'] .trust-entry,
+:root[data-theme='dark'] .trust-date-header,
+:root[data-theme='dark'] .trust-actions {
+  background: var(--dp-surface);
+  border-color: var(--dp-border);
+  color: var(--dp-text);
+}
+
+/* Keep inputs visually distinct inside darker cards */
+:root[data-theme='dark'] .admin-form-card .admin-select,
+:root[data-theme='dark'] .admin-form-card .admin-input,
+:root[data-theme='dark'] .admin-form-card .admin-textarea,
+:root[data-theme='dark'] .reports-toolbar .reports-month-input {
+  background: var(--dp-surface);
+}
+
+/* Dark mode: make native date/time/month picker icons (calendar/clock) readable */
+:root[data-theme='dark'] .admin-input[type='date'],
+:root[data-theme='dark'] .admin-input[type='time'],
+:root[data-theme='dark'] .admin-input[type='month'],
+:root[data-theme='dark'] .reports-month-input[type='month'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] .admin-input[type='date']::-webkit-calendar-picker-indicator,
+:root[data-theme='dark'] .admin-input[type='time']::-webkit-calendar-picker-indicator,
+:root[data-theme='dark'] .admin-input[type='month']::-webkit-calendar-picker-indicator,
+:root[data-theme='dark'] .reports-month-input[type='month']::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.95;
+}
+
+:root[data-theme='dark'] .report-card {
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .report-card-head {
+  border-bottom-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .report-table {
+  border-bottom-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .report-table th {
+  background: var(--dp-surface-2);
+  border-bottom-color: var(--dp-border);
+}
+
+:root[data-theme='dark'] .overview-reservation-range {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .trust-author,
+:root[data-theme='dark'] .trust-content p,
+:root[data-theme='dark'] .trustbox-published-preview-item .trustbox-preview-answerTitle {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .trust-section-title,
+:root[data-theme='dark'] .trust-date-header,
+:root[data-theme='dark'] .trust-answer p,
+:root[data-theme='dark'] .trust-content p,
+:root[data-theme='dark'] .trustbox-published-preview-item .trustbox-preview-answerText {
+  color: #ccc;
+}
+
+:root[data-theme='dark'] .trust-date-header {
+  background: var(--dp-surface);
+}
+
+:root[data-theme='dark'] .trust-category {
+  background: var(--dp-surface);
+}
+
+:root[data-theme='dark'] .report-pill-blue,
+:root[data-theme='dark'] .report-pill-purple {
+  background: #333;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .trustbox-published-preview-item .trustbox-preview-answerBox {
+  background: #222;
+  border-color: #555;
+}
+
+:root[data-theme='dark'] .trustbox-preview-expandBtn {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .trustbox-preview-text {
+  color: #ccc;
+}

@@ -90,3 +90,19 @@
   opacity: 0.45;
   cursor: default;
 }
+
+/* Dark mode overrides */
+:root[data-theme='dark'] .public-lightbox-dialog,
+:root[data-theme='dark'] .public-lightbox-imageWrap {
+  background: #222;
+}
+
+:root[data-theme='dark'] .public-lightbox-nav {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+:root[data-theme='dark'] .public-lightbox-nav:hover {
+  background: #222;
+}
