@@ -237,7 +237,13 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     const id = req.params.id;
     const id_psychologa = 1; // fixed assignment per requirement
 
-    const shouldMarkUnseenByUser = typeof odpoved !== 'undefined';
+    // Mark as unseen for the user only when a real (non-empty) answer is provided.
+    // This prevents creating notifications when the psychologist saves without writing an answer.
+    const shouldMarkUnseenByUser = typeof odpoved === 'string' && odpoved.trim().length > 0;
+
+    // If a field is omitted from the request body, keep the DB value unchanged.
+    const odpovedParam = typeof odpoved === 'undefined' ? null : odpoved;
+    const obsahPrispevkuParam = typeof obsah_prispevku === 'undefined' ? null : obsah_prispevku;
 
     const update = await pool.query(
       `UPDATE Schranka_dovery
@@ -247,7 +253,7 @@ router.patch('/:id', authenticateToken, async (req, res) => {
               videne_uzivatelom = CASE WHEN $5 THEN false ELSE videne_uzivatelom END
         WHERE id_prispevku = $3
         RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, zverejnene, videne_psychologom, videne_uzivatelom, odpoved, id_uzivatela, id_psychologa, datum_pridania`,
-      [odpoved ?? '', obsah_prispevku ?? null, id, id_psychologa, shouldMarkUnseenByUser]
+      [odpovedParam, obsahPrispevkuParam, id, id_psychologa, shouldMarkUnseenByUser]
     );
 
     if (update.rowCount === 0) {

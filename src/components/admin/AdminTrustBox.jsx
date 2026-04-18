@@ -32,7 +32,7 @@ const AdminTrustBox = ({ onSeenChange }) => {
       if (timer) return;
       timer = setTimeout(() => {
         timer = null;
-        loadTrustEntries();
+        loadTrustEntries({ silent: true });
         if (typeof onSeenChange === 'function') onSeenChange();
       }, 200);
     };
@@ -46,37 +46,56 @@ const AdminTrustBox = ({ onSeenChange }) => {
 
   useEffect(() => {
     if (!trustMessage) return;
-    const timer = setTimeout(() => setTrustMessage(''), 5000);
+    const timer = setTimeout(() => setTrustMessage(''), 4000);
     return () => clearTimeout(timer);
   }, [trustMessage]);
 
-  const loadTrustEntries = async () => {
+  const loadTrustEntries = async ({ silent = false } = {}) => {
     try {
-      setTrustLoading(true);
+      if (!silent) setTrustLoading(true);
       const resp = await fetchWithToken(`${API_BASE}/api/trust-box`, token);
       const data = await resp.json();
       if (!resp.ok) {
         setTrustMessage(`Chyba pri načítaní: ${data?.error || 'neznáma'}`);
-        setTrustEntries([]);
+        if (!silent) setTrustEntries([]);
       } else {
         setTrustEntries(data || []);
-        setTrustMessage('');
+        // Keep success notifications visible even if a background refresh happens.
+        // Clear only non-success messages after a successful reload.
+        setTrustMessage((prev) => (prev && !String(prev).startsWith('✅') ? '' : prev));
       }
     } catch (err) {
       console.error(err);
       setTrustMessage('Chyba pri načítaní správ');
-      setTrustEntries([]);
+      if (!silent) setTrustEntries([]);
     } finally {
-      setTrustLoading(false);
+      if (!silent) setTrustLoading(false);
     }
   };
 
   const updateTrustAnswer = async (id) => {
     try {
-      const payload = {
-        odpoved: answerDraft[id] ?? '',
-        obsah_prispevku: contentDraft[id],
-      };
+      const current = (trustEntries || []).find((x) => Number(x?.id_prispevku) === Number(id));
+      const currentAnswer = current?.odpoved ?? '';
+      const currentContent = current?.obsah_prispevku ?? '';
+
+      const draftAnswer = answerDraft[id];
+      const draftContent = contentDraft[id];
+
+      const payload = {};
+      if (typeof draftContent !== 'undefined' && draftContent !== currentContent) {
+        payload.obsah_prispevku = draftContent;
+      }
+      if (typeof draftAnswer !== 'undefined' && draftAnswer !== currentAnswer) {
+        payload.odpoved = draftAnswer;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        setTrustMessage('✅ Bez zmien');
+        setTrustEditId(null);
+        return;
+      }
+
       const resp = await fetchWithToken(`${API_BASE}/api/trust-box/${id}`, token, {
         method: 'PATCH',
         body: JSON.stringify(payload)
@@ -333,12 +352,14 @@ const AdminTrustBox = ({ onSeenChange }) => {
                 {isEditing ? (
                   <>
                     <button
+                      type="button"
                       onClick={() => updateTrustAnswer(id)}
                       className="admin-btn admin-btn-sm admin-btn-success"
                     >
                       💾 Uložiť
                     </button>
                     <button
+                      type="button"
                       onClick={() => { setTrustEditId(null); setAnswerDraft({}); setContentDraft({}); }}
                       className="admin-btn admin-btn-sm admin-btn-secondary"
                     >
@@ -348,6 +369,7 @@ const AdminTrustBox = ({ onSeenChange }) => {
                 ) : (
                   <>
                     <button
+                      type="button"
                       onClick={() => {
                         setTrustEditId(id);
                         setAnswerDraft({ [id]: entry.odpoved || '' });
@@ -360,6 +382,7 @@ const AdminTrustBox = ({ onSeenChange }) => {
 
                     {entry.zverejnene ? (
                       <button
+                        type="button"
                         onClick={() => unpublishTrustEntry(id)}
                         className="admin-btn admin-btn-sm admin-btn-warning"
                       >
@@ -367,6 +390,7 @@ const AdminTrustBox = ({ onSeenChange }) => {
                       </button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => publishTrustEntry(id)}
                         disabled={!isPublishable}
                         title={publishDisabledReason}

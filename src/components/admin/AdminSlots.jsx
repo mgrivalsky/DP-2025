@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchWithToken, API_BASE } from '../../utils/adminHelpers';
 import ConfirmDialog from './ConfirmDialog';
@@ -14,8 +14,15 @@ const AdminSlots = () => {
   const [editForm, setEditForm] = useState({ datum: '', cas_od: '', cas_do: '', volny: true });
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, danger: false });
 
+  const inFlightRef = useRef(false);
+  const slotsRef = useRef(slots);
+
   useEffect(() => {
-    loadSlots();
+    slotsRef.current = slots;
+  }, [slots]);
+
+  useEffect(() => {
+    loadSlots({ showSpinner: true });
   }, []);
 
   useEffect(() => {
@@ -24,14 +31,20 @@ const AdminSlots = () => {
     return () => clearTimeout(timer);
   }, [slotMessage]);
 
-  const loadSlots = async () => {
+  const loadSlots = async ({ showSpinner } = {}) => {
     try {
-      setSlotLoading(true);
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+
+      const hasData = Array.isArray(slotsRef.current) && slotsRef.current.length > 0;
+      const shouldShowSpinner = showSpinner === true || (!hasData && showSpinner !== false);
+      if (shouldShowSpinner) setSlotLoading(true);
+
       const resp = await fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token);
       const data = await resp.json();
       if (!resp.ok) {
         setSlotMessage(`Chyba pri načítaní: ${data?.error || 'neznáma'}`);
-        setSlots([]);
+        if (!hasData) setSlots([]);
       } else {
         const freeSlots = (data || []).filter((s) => s?.volny === true);
         setSlots(freeSlots);
@@ -41,8 +54,10 @@ const AdminSlots = () => {
     } catch (err) {
       console.error(err);
       setSlotMessage('Chyba pri načítaní slotov');
-      setSlots([]);
+      const hasData = Array.isArray(slotsRef.current) && slotsRef.current.length > 0;
+      if (!hasData) setSlots([]);
     } finally {
+      inFlightRef.current = false;
       setSlotLoading(false);
     }
   };
@@ -66,7 +81,7 @@ const AdminSlots = () => {
       } else {
         setSlotMessage('✅ Nový termín pridaný');
         setSlotForm({ datum: '', cas_od: '', cas_do: '', volny: true });
-        loadSlots();
+        loadSlots({ showSpinner: false });
       }
     } catch (err) {
       console.error(err);
@@ -99,7 +114,7 @@ const AdminSlots = () => {
       }
 
       setSlotMessage('✅ Termín upravený');
-      await loadSlots();
+      await loadSlots({ showSpinner: false });
       return true;
     } catch (err) {
       console.error(err);
@@ -237,7 +252,7 @@ const AdminSlots = () => {
       </form>
 
       <h3>Dostupné termíny ({slots.length})</h3>
-      {slotLoading ? (
+      {slotLoading && slots.length === 0 ? (
         <p>Načítavam termíny...</p>
       ) : slots.length === 0 ? (
         <p>Žiadne dostupné termíny</p>
@@ -299,12 +314,14 @@ const AdminSlots = () => {
                       {isEditing ? (
                         <div className="admin-actions">
                           <button
+                            type="button"
                             onClick={() => saveEditSlot(slotId)}
                             className="admin-btn admin-btn-sm admin-btn-success"
                           >
                             💾 Uložiť
                           </button>
                           <button
+                            type="button"
                             onClick={cancelEditSlot}
                             className="admin-btn admin-btn-sm admin-btn-secondary"
                           >
@@ -314,12 +331,14 @@ const AdminSlots = () => {
                       ) : (
                         <div className="admin-actions">
                           <button
+                            type="button"
                             onClick={() => startEditSlot(slot)}
                             className="admin-btn admin-btn-sm admin-btn-primary"
                           >
                             ✏️ Upraviť
                           </button>
                           <button
+                            type="button"
                             onClick={() => removeSlot(slotId)}
                             className="admin-btn admin-btn-sm admin-btn-danger"
                           >

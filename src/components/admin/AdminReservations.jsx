@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchWithToken, API_BASE, toYmd, formatSkDate } from '../../utils/adminHelpers';
 import ConfirmDialog from './ConfirmDialog';
@@ -25,6 +25,7 @@ const AdminReservations = () => {
   const [reservationMessage, setReservationMessage] = useState('');
   const [reservationLoading, setReservationLoading] = useState(false);
   const [reservationFilter, setReservationFilter] = useState('');
+  const [reservationMonthFilter, setReservationMonthFilter] = useState('');
   const [showNewReservationForm, setShowNewReservationForm] = useState(false);
   const [newReservationForm, setNewReservationForm] = useState({
     email: '',
@@ -83,7 +84,7 @@ const AdminReservations = () => {
 
   useEffect(() => {
     if (!reservationMessage) return;
-    const timer = setTimeout(() => setReservationMessage(''), 5000);
+    const timer = setTimeout(() => setReservationMessage(''), 4000);
     return () => clearTimeout(timer);
   }, [reservationMessage]);
 
@@ -211,7 +212,32 @@ const AdminReservations = () => {
     });
   };
 
-  const filteredReservations = reservations.filter((r) => !reservationFilter || r.stav === reservationFilter);
+  const availableMonths = useMemo(() => {
+    const unique = new Set();
+    (reservations || []).forEach((r) => {
+      const ymd = toYmd(r?.datum);
+      const ym = ymd ? ymd.slice(0, 7) : '';
+      if (ym) unique.add(ym);
+    });
+    return Array.from(unique).sort((a, b) => b.localeCompare(a));
+  }, [reservations]);
+
+  const monthLabel = (ym) => {
+    try {
+      return new Date(`${ym}-01T00:00:00`).toLocaleDateString('sk-SK', { month: 'long', year: 'numeric' });
+    } catch {
+      return ym;
+    }
+  };
+
+  const filteredReservations = (reservations || []).filter((r) => {
+    if (reservationFilter && r.stav !== reservationFilter) return false;
+    if (reservationMonthFilter) {
+      const ym = toYmd(r?.datum).slice(0, 7);
+      if (ym !== reservationMonthFilter) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="admin-section full-width reservations-section">
@@ -337,6 +363,20 @@ const AdminReservations = () => {
           <option value="potvrdena">Potvrdená</option>
           <option value="zrusena">Zrušená</option>
           <option value="dokoncena">Dokončená</option>
+        </select>
+
+        <label className="admin-toolbar-label">Filtrovať podľa mesiaca:</label>
+        <select
+          value={reservationMonthFilter}
+          onChange={(e) => setReservationMonthFilter(e.target.value)}
+          className="admin-select admin-select-inline"
+        >
+          <option value="">Všetky</option>
+          {availableMonths.map((ym) => (
+            <option key={ym} value={ym}>
+              {monthLabel(ym)}
+            </option>
+          ))}
         </select>
       </div>
 

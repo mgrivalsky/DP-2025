@@ -68,7 +68,7 @@ const FLOW = {
   relations: {
     type: "question",
     title: "Vzťahy a bezpečie",
-    text: "Ktorá oblasť je ti najbližšia?",
+    text: "Ktorá oblasť sa ťa týka najviac?",
     options: [
       { label: "Šikana / online útoky", next: "rel_bullying" },
       { label: "Konflikty s rovesníkmi", next: "rel_conflict" },
@@ -302,7 +302,7 @@ const FLOW = {
     recommendations: [
       "Identifikuj 1–2 osoby, ktoré sú ti blízko (spolužiak, učiteľ).",
       "Povedz im konkrétne, s čím potrebuješ pomoc.",
-      "Skús študentské poradenské centrum na škole.",
+      <>Skús kontaktovať <a href="https://www.spseke.sk/skola/index.php/skolsky-podporny-tim" target="_blank" rel="noopener noreferrer">školský podporný tím</a>.</>,
     ],
   },
   res_family_crisis: {
@@ -365,9 +365,9 @@ const FLOW = {
     type: "result",
     title: "Dôležité – bezpečnosť",
     recommendations: [
-      "Ak máš myšlienky ublížiť si alebo si v ohrození, volaj 112.",
-      "Linka dôvery Nezábudka: 0800 800 566 (nonstop).",
-      "Linka pre deti a mládež: 116 111, IPčko.sk – nonstop chat.",
+      "To, čo cítiš je silné. Ale nie si v tom sám. Zaslúžiš si pomoc.",
+      "Linka pre deti a mládež: 116 111. ",
+      <><a href="https://ipcko.sk/" target="_blank" rel="noopener noreferrer">IPčko.sk</a> – nonstop chat s odborníkmi.</>
     ],
   },
 
@@ -535,7 +535,15 @@ export default function Expert() {
                     <span className="expert-system__safetyIcon">⚠️</span>
                     <strong>Ak sa cítiš v ohrození, volaj:</strong> <br/>
                     <span className="expert-system__hotline112">112</span> (Záchranná linka) | 
-                    <span className="expert-system__hotlineOther">0800 800 566</span> (Linka Nezábudka)
+                    <span className="expert-system__hotlineOther">0800 800 566</span> (
+                      <a 
+                        href="https://www.linkanezabudka.sk/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        Linka Nezábudka
+                      </a>
+                    )
                   </p>
                 </div>
               </div>

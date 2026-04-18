@@ -189,6 +189,11 @@
   margin-left: 10px;
 }
 
+
+.expert-system__safetyText a {
+  color: inherit;
+}
+
 .expert-system__footer {
   display: flex;
   gap: 12px;
@@ -278,6 +283,10 @@
 }
 
 :root[data-theme='dark'] .expert-system__safetyText {
+  color: #fff;
+}
+
+:root[data-theme='dark'] .expert-system__hotlineOther a {
   color: #fff;
 }
 
