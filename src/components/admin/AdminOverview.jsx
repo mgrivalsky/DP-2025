@@ -9,6 +9,7 @@ const AdminOverview = () => {
   const [slots, setSlots] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const [activityLimit, setActivityLimit] = useState('10');
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,19 +27,22 @@ const AdminOverview = () => {
         String(activityLimit) === 'all'
           ? `${API_BASE}/api/reports/recent-activities?limit=all`
           : `${API_BASE}/api/reports/recent-activities?limit=${Number(activityLimit) || 10}`;
-      const [resResp, slotsResp, actResp] = await Promise.all([
+      const [resResp, slotsResp, actResp, usersCountResp] = await Promise.all([
         fetchWithToken(`${API_BASE}/api/reservations`, token),
         fetchWithToken(`${API_BASE}/api/cas-slots?psycholog_id=1`, token),
-        fetchWithToken(activityUrl, token)
+        fetchWithToken(activityUrl, token),
+        fetchWithToken(`${API_BASE}/api/reports/users-count`, token)
       ]);
       
       const resData = await resResp.json();
       const slotsData = await slotsResp.json();
       const actData = await actResp.json();
+      const usersCountData = await usersCountResp.json();
       
       if (resResp.ok) setReservations(resData || []);
       if (slotsResp.ok) setSlots(slotsData || []);
       if (actResp.ok) setRecentActivities(actData?.items || []);
+      if (usersCountResp.ok) setTotalUsers(Number(usersCountData?.count) || 0);
     } catch (err) {
       // ignore
     } finally {
@@ -64,7 +68,7 @@ const AdminOverview = () => {
   };
 
   const stats = {
-    totalUsers: 862,
+    totalUsers,
     activeReservations: reservations.filter(r => r.stav === 'vytvorena' || r.stav === 'potvrdena').length,
     pendingRequests: slots.filter(s => s.volny).length,
     completedSessions: reservations.filter(r => r.stav === 'dokoncena').length
@@ -101,7 +105,7 @@ const AdminOverview = () => {
     return reservations
       .filter(r => {
         const d = parseLocalDate(r.datum);
-        return (r.stav === 'vytvorena' || r.stav === 'potvrdena') && d && d >= today;
+        return r.stav === 'potvrdena' && d && d >= today;
       })
       .sort((a, b) => {
         const dateA = parseLocalDate(a.datum) || new Date(0);

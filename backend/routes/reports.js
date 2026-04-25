@@ -216,4 +216,20 @@ router.get('/recent-activities', async (req, res) => {
   }
 });
 
+// GET /api/reports/users-count
+// Počet užívateľov v systéme (tabuľka Uzivatel)
+router.get('/users-count', async (req, res) => {
+  try {
+    if (!isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const q = await pool.query('SELECT COUNT(*)::int AS count FROM Uzivatel');
+    return res.json({ count: q.rows?.[0]?.count || 0 });
+  } catch (error) {
+    console.error('Users count error:', error);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
 module.exports = router;
