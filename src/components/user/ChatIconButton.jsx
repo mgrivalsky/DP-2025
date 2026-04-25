@@ -1,52 +1,67 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { getSocket } from "../../utils/socket";
 import "../styles/QuickHelp.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
-const POLL_INTERVAL = 3000;
-
 
 const ChatIconButton = () => {
-  const { user, fetchWithAuth } = useAuth();
+  const { user, token, fetchWithAuth } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const refreshTimerRef = useRef(null);
 
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = useCallback(async () => {
     if (!user?.id) return;
     if (String(user?.role || '').toLowerCase() === 'psycholog' || String(user?.role || '').toLowerCase() === 'admin') return;
     try {
-      const chatsRes = await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}`);
-      if (!chatsRes.ok) throw new Error("Failed to load chats");
-      const chats = await chatsRes.json();
-
-      const counts = await Promise.all(
-        (chats || []).map(async (chat) => {
-          try {
-            const res = await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
-            if (!res.ok) return 0;
-            const messages = await res.json();
-            return (messages || []).filter(
-              (msg) => !msg.videne && msg.odesilatel_typ === "psycholog"
-            ).length;
-          } catch (err) {
-            return 0;
-          }
-        })
-      );
-
-      const total = counts.reduce((sum, count) => sum + count, 0);
-      setUnreadCount(total);
+      const resp = await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}/unread-count`);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) return;
+      setUnreadCount(Number(data?.count) || 0);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [user?.id, user?.role, fetchWithAuth]);
 
   useEffect(() => {
     if (!user?.id) return;
     loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [user?.id, fetchWithAuth]);
+  }, [user?.id, loadUnreadCount]);
+
+  // Socket-driven unread refresh (no polling)
+  useEffect(() => {
+    if (!token || !user?.id) return;
+    if (String(user?.role || '').toLowerCase() === 'psycholog' || String(user?.role || '').toLowerCase() === 'admin') return;
+
+    const sock = getSocket(token);
+    if (!sock) return;
+
+    const scheduleRefresh = () => {
+      if (refreshTimerRef.current) return;
+      refreshTimerRef.current = setTimeout(() => {
+        refreshTimerRef.current = null;
+        loadUnreadCount();
+      }, 200);
+    };
+
+    const onMessage = (payload) => {
+      const sender = String(payload?.odesilatel_typ || '').toLowerCase();
+      if (sender === 'psycholog') scheduleRefresh();
+    };
+    const onChatUpdated = () => scheduleRefresh();
+
+    sock.on('message', onMessage);
+    sock.on('chatUpdated', onChatUpdated);
+    return () => {
+      sock.off('message', onMessage);
+      sock.off('chatUpdated', onChatUpdated);
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, [token, user?.id, user?.role, loadUnreadCount]);
   const handleScroll = async () => {
     if (user?.id) {
       try {

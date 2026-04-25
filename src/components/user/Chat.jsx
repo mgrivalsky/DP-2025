@@ -39,10 +39,9 @@ export const Chat = () => {
       try {
         const response = await fetch(`${API_BASE}/api/health`);
         if (response.ok) {
-          console.log('✅ Backend is accessible');
+          // ok
         }
       } catch (err) {
-        console.error('❌ Backend not accessible:', err);
         setError('Backend servisu nie je dostupný. Skontroluj či beží server na http://localhost:5000');
       }
     };
@@ -59,11 +58,9 @@ export const Chat = () => {
   const loadChats = async () => {
     try {
       if (!user?.id) {
-        console.warn('No user ID available');
         return;
       }
       const userId = parseInt(user.id);
-      console.log('Loading chats for user ID:', userId);
       const response = await fetchWithAuth(`${API_BASE}/api/chat/user/${userId}`);
       if (!response.ok) {
         const data = await response.json();
@@ -73,7 +70,6 @@ export const Chat = () => {
       setChats(data || []);
       setError('');
     } catch (err) {
-      console.error('loadChats error:', err);
       setError('Chyba pri načítaní chatov: ' + err.message);
     }
   };
@@ -159,7 +155,6 @@ export const Chat = () => {
 
         // Do not mark messages as seen from user view
       } catch (err) {
-        console.error('loadMessages error:', err);
       }
     };
 
@@ -180,7 +175,6 @@ export const Chat = () => {
       if (!user?.id) {
         throw new Error('Užívateľský ID nie je dostupný');
       }
-      console.log('Starting chat with user ID:', user.id, 'psychologId:', psychologId);
       const response = await fetchWithAuth(`${API_BASE}/api/chat/create`, {
         method: 'POST',
         body: JSON.stringify({ 
@@ -188,19 +182,16 @@ export const Chat = () => {
           psychologId: parseInt(psychologId) 
         }),
       });
-      console.log('Chat create response status:', response.status);
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to create chat');
       }
       const chat = await response.json();
-      console.log('Chat created:', chat);
       setSelectedChat(chat);
       setMessages([]);
       // Reload chats to show the new one
       loadChats();
     } catch (err) {
-      console.error('handleStartChat error:', err);
       setError('Chyba pri vytváraní chatu: ' + err.message);
     } finally {
       setLoading(false);
@@ -236,7 +227,6 @@ export const Chat = () => {
       setMessages((prev) => [...prev, message]);
       loadChats();
     } catch (err) {
-      console.error(err);
       setError('Chyba pri odoslaní správy: ' + err.message);
       setMessageText(msgToSend);
     }

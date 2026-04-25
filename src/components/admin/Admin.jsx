@@ -86,13 +86,7 @@ export const Admin = () => {
       if (!user?.id) return;
       const resp = await fetchWithToken(`${API_BASE}/api/reservations/psycholog/${user.id}/mark-seen`, token, { method: 'PUT' });
       if (!resp.ok) {
-        let body = null;
-        try {
-          body = await resp.json();
-        } catch {
-          // ignore
-        }
-        console.warn('Reservations mark-seen failed:', resp.status, body);
+        console.warn('Reservations mark-seen failed:', resp.status);
         return;
       }
       await loadReservationUnreadTotal();
@@ -107,13 +101,7 @@ export const Admin = () => {
       if (!user?.id) return;
       const resp = await fetchWithToken(`${API_BASE}/api/trust-box/unseen-count`, token);
       if (!resp.ok) {
-        let body = null;
-        try {
-          body = await resp.json();
-        } catch {
-          // ignore
-        }
-        console.warn('TrustBox unseen-count failed:', resp.status, body);
+        console.warn('TrustBox unseen-count failed:', resp.status);
         return;
       }
       const data = await resp.json();

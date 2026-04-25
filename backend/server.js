@@ -1,6 +1,8 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
@@ -25,6 +27,29 @@ const PORT = process.env.PORT || 5000;
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
+const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+
+function envPositiveInt(name, fallback) {
+  const raw = process.env[name];
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  const v = Math.floor(n);
+  return v > 0 ? v : fallback;
+}
+
+const sessionSecretFromEnv = String(process.env.SESSION_SECRET || '').trim();
+if (!sessionSecretFromEnv) {
+  if (isProd) {
+    console.error('SESSION_SECRET must be set in production. Refusing to start.');
+    process.exit(1);
+  }
+  console.warn('SESSION_SECRET is not set. Using a dev-only fallback secret.');
+}
+const SESSION_SECRET_EFFECTIVE = sessionSecretFromEnv || 'dev-session-secret-change-me';
+
+// Trust upstream proxy (Render / reverse proxies) so req.ip and secure cookies work correctly.
+app.set('trust proxy', 1);
+
 // Passport init (Google OAuth)
 let passport;
 try {
@@ -38,6 +63,43 @@ try {
 
 // Middleware
 app.use(
+  helmet({
+    // This backend is an API; disabling these avoids accidental cross-origin breakage.
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false
+  })
+);
+
+// Rate limiting
+// - Non-chat API endpoints share one number (RATE_LIMIT_OTHER)
+// - Chat gets a higher dedicated number (RATE_LIMIT_CHAT)
+// - Socket.IO endpoint is excluded
+const otherLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: envPositiveInt('RATE_LIMIT_OTHER', 400),
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: (req) => {
+    const p = String(req.path || '');
+    if (p.startsWith('/socket.io/')) return true;
+    // Chat has its own limiter; don't double-limit.
+    if (p === '/api/chat' || p.startsWith('/api/chat/')) return true;
+    return false;
+  }
+});
+
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: envPositiveInt('RATE_LIMIT_CHAT', isProd ? 800 : 1400),
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: (req) => String(req.path || '').startsWith('/socket.io/')
+});
+
+app.use(otherLimiter);
+
+app.use(
   cors({
     origin: FRONTEND_URL,
     credentials: true
@@ -48,9 +110,14 @@ app.use(express.json());
 // Session is required for the OAuth redirect handshake
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'dev-session-secret-change-me',
+    secret: SESSION_SECRET_EFFECTIVE,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProd
+    }
   })
 );
 
@@ -58,6 +125,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
+app.use('/api/chat', chatLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/cas-slots', casSlotRoutes);
@@ -196,8 +264,21 @@ io.on('connection', (socket) => {
       await pool.query('UPDATE Chat SET posledna_sprava = CURRENT_TIMESTAMP WHERE id_chatu = $1', [access.chatId]);
 
       const payload = message.rows[0];
+      const userRoomId = Number(access?.chat?.id_uzivatela);
+      const psychRoomId = Number(access?.chat?.id_psychologa);
+
       io.to(`chat:${access.chatId}`).emit('message', payload);
       io.to(`chat:${access.chatId}`).emit('chatUpdated', { chatId: access.chatId, posledna_sprava: new Date().toISOString() });
+
+      // Also notify role rooms so clients can update badges without joining all chat rooms.
+      if (userRoomId) {
+        io.to(`user:${userRoomId}`).emit('message', payload);
+        io.to(`user:${userRoomId}`).emit('chatUpdated', { chatId: access.chatId, posledna_sprava: new Date().toISOString() });
+      }
+      if (psychRoomId) {
+        io.to(`psycholog:${psychRoomId}`).emit('message', payload);
+        io.to(`psycholog:${psychRoomId}`).emit('chatUpdated', { chatId: access.chatId, posledna_sprava: new Date().toISOString() });
+      }
     } catch (e) {
       socket.emit('errorMessage', { type: 'sendMessage', error: 'Chyba servera' });
     }

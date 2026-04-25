@@ -7,11 +7,16 @@ const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
 const isUser = (role) => !isPsycholog(role);
 
-function emitTrustBoxUpdate(req, payload) {
+function emitTrustBoxUpdate(req, payload, { userId } = {}) {
   try {
     const io = req.app?.get('io');
     if (!io) return;
     io.to('role:psycholog').emit('trustBoxUpdated', payload || {});
+
+    const uid = Number(userId);
+    if (uid) {
+      io.to(`user:${uid}`).emit('trustBoxUpdated', payload || {});
+    }
   } catch {
     // ignore
   }
@@ -260,8 +265,14 @@ router.patch('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Správa nenájdená' });
     }
 
-    emitTrustBoxUpdate(req, { action: 'updated', id: Number(id) || null });
-    return res.json(update.rows[0]);
+    const updatedRow = update.rows[0];
+    // Notify psycholog always; notify the owning user only when this change creates a new unseen reply.
+    if (shouldMarkUnseenByUser && updatedRow?.id_uzivatela) {
+      emitTrustBoxUpdate(req, { action: 'reply', id: Number(id) || null }, { userId: updatedRow.id_uzivatela });
+    } else {
+      emitTrustBoxUpdate(req, { action: 'updated', id: Number(id) || null });
+    }
+    return res.json(updatedRow);
   } catch (err) {
     console.error('Error updating trust box message:', err);
     return res.status(500).json({ error: 'Chyba servera pri ukladaní odpovede' });

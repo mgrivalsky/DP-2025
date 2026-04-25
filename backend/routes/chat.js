@@ -72,6 +72,38 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+// Total unread psychologist messages for a user (cheap badge endpoint)
+router.get('/user/:userId/unread-count', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ error: 'userId je povinne' });
+    }
+
+    if (isPsycholog(req.user?.role)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+    if (Number(userId) !== Number(req.user?.id)) {
+      return res.status(403).json({ error: 'Nemáte oprávnenie' });
+    }
+
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM Sprava s
+       JOIN Chat c ON c.id_chatu = s.id_chatu
+       WHERE c.id_uzivatela = $1
+         AND s.videne = false
+         AND LOWER(TRIM(s.odesilatel_typ)) = 'psycholog'`,
+      [userId]
+    );
+
+    return res.json({ count: result.rows[0]?.count || 0 });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Chyba servera' });
+  }
+});
+
 // Get all chats for a psychologist
 router.get('/psycholog/:psychologId', async (req, res) => {
   try {
@@ -151,6 +183,14 @@ router.put('/user/:userId/mark-seen-psycholog', async (req, res) => {
          AND s.videne = false`,
       [userId]
     );
+
+    // Let all user UI parts refresh badges (no polling needed)
+    try {
+      const io = req.app?.get('io');
+      if (io) io.to(`user:${userId}`).emit('chatUpdated', { type: 'seenAll', by: 'user' });
+    } catch {
+      // ignore
+    }
 
     res.json({ success: true });
   } catch (err) {
@@ -254,6 +294,7 @@ router.post('/:chatId/message', async (req, res) => {
     const access = await ensureChatAccess(req, chatId);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
 
+    const chatIdNum = parseInt(chatId, 10);
     const odesilatel_typ = isPsycholog(req.user?.role) ? 'psycholog' : 'uzivatel';
 
     // Insert message
@@ -261,14 +302,32 @@ router.post('/:chatId/message', async (req, res) => {
       `INSERT INTO Sprava (obsah, id_chatu, odesilatel_typ, videne) 
        VALUES ($1, $2, $3, false)
        RETURNING *`,
-      [obsah, chatId, odesilatel_typ]
+      [obsah, chatIdNum, odesilatel_typ]
     );
 
     // Update chat's last message timestamp
     await pool.query(
       `UPDATE Chat SET posledna_sprava = CURRENT_TIMESTAMP WHERE id_chatu = $1`,
-      [chatId]
+      [chatIdNum]
     );
+
+    // Broadcast to connected clients (user + psycholog) to update UI without polling.
+    try {
+      const io = req.app?.get('io');
+      const payload = message.rows[0];
+      const userRoomId = Number(access?.chat?.id_uzivatela);
+      const psychRoomId = Number(access?.chat?.id_psychologa);
+      if (io) {
+        io.to(`chat:${chatIdNum}`).emit('message', payload);
+        io.to(`chat:${chatIdNum}`).emit('chatUpdated', { chatId: chatIdNum, posledna_sprava: new Date().toISOString() });
+        if (userRoomId) io.to(`user:${userRoomId}`).emit('message', payload);
+        if (psychRoomId) io.to(`psycholog:${psychRoomId}`).emit('message', payload);
+        if (userRoomId) io.to(`user:${userRoomId}`).emit('chatUpdated', { chatId: chatIdNum });
+        if (psychRoomId) io.to(`psycholog:${psychRoomId}`).emit('chatUpdated', { chatId: chatIdNum });
+      }
+    } catch {
+      // ignore socket emit errors
+    }
 
     res.json(message.rows[0]);
   } catch (err) {

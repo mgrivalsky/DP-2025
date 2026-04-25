@@ -44,30 +44,11 @@ export const Contact = (props) => {
 
   const clearState = () => setState({ ...initialState });
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   emailjs
-  //     .sendForm("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", e.target, "YOUR_PUBLIC_KEY")
-  //     .then(
-  //       (result) => {
-  //         console.log(result.text);
-  //         setStatusMessage("Správa bola úspešne odoslaná.");
-  //         setIsSuccess(true);
-  //         clearState();
-  //       },
-  //       (error) => {
-  //         console.log(error.text);
-  //         setStatusMessage("Nepodarilo sa odoslať správu. Skúste to znova.");
-  //         setIsSuccess(false);
-  //       }
-  //     );
-  // };
 
   const handleSubmit = (e) => {
   e.preventDefault();
 
   setTimeout(() => {
-    console.log("Simulované odoslanie.");
     setStatusMessage("Správa bola úspešne odoslaná.");
     setIsSuccess(true);
     clearState();

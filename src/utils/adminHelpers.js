@@ -25,9 +25,6 @@ export const fetchWithToken = async (url, token, options = {}) => {
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('📤 Posielam request s tokenom:', url);
-  } else {
-    console.warn('⚠️ Žiadny token pri requeste na:', url);
   }
   return fetch(url, { ...options, headers });
 };

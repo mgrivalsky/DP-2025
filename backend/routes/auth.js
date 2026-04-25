@@ -154,7 +154,8 @@ router.get(
       }
 
       const token = jwt.sign(userPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
-      return res.redirect(`${frontendBaseUrl()}/oauth-callback?token=${encodeURIComponent(token)}`);
+      // Use URL fragment so the token is not sent to the server (and doesn't leak via logs/Referer).
+      return res.redirect(`${frontendBaseUrl()}/oauth-callback#token=${encodeURIComponent(token)}`);
     } catch (error) {
       console.error('Google callback error:', error);
       const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';

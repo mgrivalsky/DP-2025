@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { getSocket } from "../../utils/socket";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 export const NavigationMain = () => {
-  const { logout, user, fetchWithAuth, confirmedSessionsCount } = useAuth();
+  const { logout, user, token, fetchWithAuth, confirmedSessionsCount } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -15,6 +16,8 @@ export const NavigationMain = () => {
   const [activeSection, setActiveSection] = useState(null);
   const trustReqSeq = useRef(0);
   const chatReqSeq = useRef(0);
+  const chatRefreshTimerRef = useRef(null);
+  const trustRefreshTimerRef = useRef(null);
   const scrollSpyRaf = useRef(null);
 
   const homeSectionIds = useRef([
@@ -116,28 +119,11 @@ export const NavigationMain = () => {
     const seq = ++chatReqSeq.current;
 
     try {
-      const chatsRes = await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}`);
-      if (!chatsRes.ok) throw new Error("Failed to load chats");
-      const chats = await chatsRes.json();
-
-      const counts = await Promise.all(
-        (chats || []).map(async (chat) => {
-          try {
-            const res = await fetchWithAuth(`${API_BASE}/api/chat/${chat.id_chatu}/messages`);
-            if (!res.ok) return 0;
-            const messages = await res.json();
-            return (messages || []).filter(
-              (msg) => !msg.videne && msg.odesilatel_typ === "psycholog"
-            ).length;
-          } catch (_err) {
-            return 0;
-          }
-        })
-      );
-
+      const resp = await fetchWithAuth(`${API_BASE}/api/chat/user/${user.id}/unread-count`);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) return;
       if (seq !== chatReqSeq.current) return;
-      const total = counts.reduce((sum, count) => sum + count, 0);
-      setUnreadCount(total);
+      setUnreadCount(Number(data?.count) || 0);
     } catch (err) {
       console.error(err);
     }
@@ -146,9 +132,41 @@ export const NavigationMain = () => {
   useEffect(() => {
     if (!user?.id) return;
     loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 3000);
-    return () => clearInterval(interval);
   }, [user?.id, loadUnreadCount]);
+
+  // Socket-driven unread refresh (no polling)
+  useEffect(() => {
+    if (!token || !user?.id) return;
+    if (String(user?.role || '').toLowerCase() === 'psycholog' || String(user?.role || '').toLowerCase() === 'admin') return;
+
+    const sock = getSocket(token);
+    if (!sock) return;
+
+    const scheduleRefresh = () => {
+      if (chatRefreshTimerRef.current) return;
+      chatRefreshTimerRef.current = setTimeout(() => {
+        chatRefreshTimerRef.current = null;
+        loadUnreadCount();
+      }, 200);
+    };
+
+    const onMessage = (payload) => {
+      const sender = String(payload?.odesilatel_typ || '').toLowerCase();
+      if (sender === 'psycholog') scheduleRefresh();
+    };
+    const onChatUpdated = () => scheduleRefresh();
+
+    sock.on('message', onMessage);
+    sock.on('chatUpdated', onChatUpdated);
+    return () => {
+      sock.off('message', onMessage);
+      sock.off('chatUpdated', onChatUpdated);
+      if (chatRefreshTimerRef.current) {
+        clearTimeout(chatRefreshTimerRef.current);
+        chatRefreshTimerRef.current = null;
+      }
+    };
+  }, [token, user?.id, user?.role, loadUnreadCount]);
 
   const loadTrustUnreadCount = useCallback(async () => {
     if (!user?.id) return;
@@ -170,9 +188,35 @@ export const NavigationMain = () => {
   useEffect(() => {
     if (!user?.id) return;
     loadTrustUnreadCount();
-    const interval = setInterval(loadTrustUnreadCount, 5000);
-    return () => clearInterval(interval);
   }, [user?.id, loadTrustUnreadCount]);
+
+  // Socket-driven TrustBox unseen refresh (no polling)
+  useEffect(() => {
+    if (!token || !user?.id) return;
+    if (String(user?.role || '').toLowerCase() === 'psycholog' || String(user?.role || '').toLowerCase() === 'admin') return;
+
+    const sock = getSocket(token);
+    if (!sock) return;
+
+    const scheduleRefresh = () => {
+      if (trustRefreshTimerRef.current) return;
+      trustRefreshTimerRef.current = setTimeout(() => {
+        trustRefreshTimerRef.current = null;
+        loadTrustUnreadCount();
+      }, 200);
+    };
+
+    const onTrustBoxUpdated = () => scheduleRefresh();
+
+    sock.on('trustBoxUpdated', onTrustBoxUpdated);
+    return () => {
+      sock.off('trustBoxUpdated', onTrustBoxUpdated);
+      if (trustRefreshTimerRef.current) {
+        clearTimeout(trustRefreshTimerRef.current);
+        trustRefreshTimerRef.current = null;
+      }
+    };
+  }, [token, user?.id, user?.role, loadTrustUnreadCount]);
 
   useEffect(() => {
     const handler = () => {
@@ -181,6 +225,22 @@ export const NavigationMain = () => {
     window.addEventListener("trustbox:refresh-unseen", handler);
     return () => window.removeEventListener("trustbox:refresh-unseen", handler);
   }, [loadTrustUnreadCount]);
+
+  // Refresh counts when returning to the tab (helps when socket was temporarily disconnected)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadUnreadCount();
+        loadTrustUnreadCount();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [loadUnreadCount, loadTrustUnreadCount]);
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
