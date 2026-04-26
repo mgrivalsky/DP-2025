@@ -20,6 +20,13 @@ export const NavigationMain = () => {
   const trustRefreshTimerRef = useRef(null);
   const scrollSpyRaf = useRef(null);
 
+  const closeNavbarPanel = () => {
+    const collapse = document.getElementById("bs-example-navbar-collapse-1");
+    if (!collapse) return;
+    if (!collapse.classList.contains("in")) return;
+    collapse.classList.remove("in");
+  };
+
   const homeSectionIds = useRef([
     "news",
     "usertrustbox",
@@ -257,6 +264,7 @@ export const NavigationMain = () => {
 
   const handleSectionClick = (id) => async (e) => {
     e.preventDefault();
+    closeNavbarPanel();
 
     setActiveSection(id);
 
@@ -278,8 +286,13 @@ export const NavigationMain = () => {
   };
 
   const handleLogout = () => {
+    closeNavbarPanel();
     logout();
     navigate('/login');
+  };
+
+  const handleHistoryClick = () => {
+    closeNavbarPanel();
   };
 
   const scrollToTop = () => {
@@ -303,6 +316,7 @@ export const NavigationMain = () => {
   const handleTopClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    closeNavbarPanel();
 
     setActiveSection(null);
 
@@ -383,6 +397,7 @@ export const NavigationMain = () => {
             <li>
               <Link
                 to="/history"
+                onClick={handleHistoryClick}
                 className="page-scroll nav-user-pill"
               >
                 👤 {user?.name}

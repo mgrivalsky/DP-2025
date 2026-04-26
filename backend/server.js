@@ -140,21 +140,23 @@ app.get('/api/health', (req, res) => {
 });
 
 // DB health & diagnostics
-app.get('/api/health/db', async (req, res) => {
-  try {
-    const version = await pool.query('select version()');
-    const counts = await pool.query(
-      `select (select count(*) from pg_catalog.pg_tables where schemaname = current_schema()) as tables_count`
-    );
-    res.json({
-      db: 'ok',
-      version: version.rows?.[0]?.version,
-      tablesInSchema: Number(counts.rows?.[0]?.tables_count || 0)
-    });
-  } catch (e) {
-    res.status(500).json({ db: 'error', code: e.code, message: e.message });
-  }
-});
+if (!isProd) {
+  app.get('/api/health/db', async (req, res) => {
+    try {
+      const version = await pool.query('select version()');
+      const counts = await pool.query(
+        `select (select count(*) from pg_catalog.pg_tables where schemaname = current_schema()) as tables_count`
+      );
+      res.json({
+        db: 'ok',
+        version: version.rows?.[0]?.version,
+        tablesInSchema: Number(counts.rows?.[0]?.tables_count || 0)
+      });
+    } catch (e) {
+      res.status(500).json({ db: 'error', code: e.code, message: e.message });
+    }
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

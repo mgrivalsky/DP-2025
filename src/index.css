@@ -62,6 +62,16 @@ body {
   }
 }
 
+@media (max-width: 767px) {
+  /* Show more items in mobile menu; keep it scrollable when content is taller than viewport. */
+  #menu.navbar-fixed-top .navbar-collapse,
+  .navbar-fixed-top #bs-example-navbar-collapse-1 {
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 :root {
   --dp-bg: #fff;
   --dp-surface: #fff;

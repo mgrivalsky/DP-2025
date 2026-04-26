@@ -6,7 +6,7 @@ const AuthContext = createContext(null);
 // Backend API base URL
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minút v milisekundách
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minút v milisekundách
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     if (savedUser && savedToken && savedLastActivity) {
       const timeSinceLastActivity = Date.now() - parseInt(savedLastActivity);
       
-      // Ak prešlo viac ako 5 minút, odhlásiť
+      // Ak prešlo viac ako 10 minút, odhlásiť
       if (timeSinceLastActivity < INACTIVITY_TIMEOUT) {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
       if (timeSinceLastActivity >= INACTIVITY_TIMEOUT) {
         // Automatické odhlásenie
         logout();
-        alert('Boli ste odhlásení z důvodu nečinnosti (5 minút).');
+        alert('Boli ste odhlásení z důvodu nečinnosti (10 minút).');
       }
     }, 10000); // Kontrola každých 10 sekúnd
 
