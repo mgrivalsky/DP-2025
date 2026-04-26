@@ -14,9 +14,9 @@ export function getSocket(token) {
   const tok = String(token || '').trim();
   if (!tok) return null;
 
-  if (socket && socket.connected && socketToken === tok) {
-    return socket;
-  }
+  // Reuse the same socket while connecting/connected as long as token matches.
+  // This prevents connection thrash when multiple components call getSocket() at once.
+  if (socket && socketToken === tok) return socket;
 
   if (socket) {
     try {

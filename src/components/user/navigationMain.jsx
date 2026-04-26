@@ -155,12 +155,15 @@ export const NavigationMain = () => {
       if (sender === 'psycholog') scheduleRefresh();
     };
     const onChatUpdated = () => scheduleRefresh();
+    const onConnect = () => scheduleRefresh();
 
     sock.on('message', onMessage);
     sock.on('chatUpdated', onChatUpdated);
+    sock.on('connect', onConnect);
     return () => {
       sock.off('message', onMessage);
       sock.off('chatUpdated', onChatUpdated);
+      sock.off('connect', onConnect);
       if (chatRefreshTimerRef.current) {
         clearTimeout(chatRefreshTimerRef.current);
         chatRefreshTimerRef.current = null;
@@ -207,10 +210,13 @@ export const NavigationMain = () => {
     };
 
     const onTrustBoxUpdated = () => scheduleRefresh();
+    const onConnect = () => scheduleRefresh();
 
     sock.on('trustBoxUpdated', onTrustBoxUpdated);
+    sock.on('connect', onConnect);
     return () => {
       sock.off('trustBoxUpdated', onTrustBoxUpdated);
+      sock.off('connect', onConnect);
       if (trustRefreshTimerRef.current) {
         clearTimeout(trustRefreshTimerRef.current);
         trustRefreshTimerRef.current = null;

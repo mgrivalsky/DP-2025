@@ -50,12 +50,15 @@ const ChatIconButton = () => {
       if (sender === 'psycholog') scheduleRefresh();
     };
     const onChatUpdated = () => scheduleRefresh();
+    const onConnect = () => scheduleRefresh();
 
     sock.on('message', onMessage);
     sock.on('chatUpdated', onChatUpdated);
+    sock.on('connect', onConnect);
     return () => {
       sock.off('message', onMessage);
       sock.off('chatUpdated', onChatUpdated);
+      sock.off('connect', onConnect);
       if (refreshTimerRef.current) {
         clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = null;
