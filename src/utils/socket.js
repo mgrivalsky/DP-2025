@@ -1,6 +1,11 @@
 import { io } from 'socket.io-client';
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+const FALLBACK_BASE =
+  typeof window !== 'undefined' && window.location && window.location.origin
+    ? window.location.origin
+    : 'http://localhost:5000';
+
+const API_BASE = process.env.REACT_APP_API_BASE || FALLBACK_BASE;
 
 let socket = null;
 let socketToken = null;
@@ -24,7 +29,7 @@ export function getSocket(token) {
 
   socketToken = tok;
   socket = io(API_BASE, {
-    transports: ['websocket'],
+    // Allow fallback transports. Some production networks/proxies block WebSockets.
     auth: { token: tok }
   });
 
