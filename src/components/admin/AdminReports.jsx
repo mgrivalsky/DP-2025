@@ -359,6 +359,13 @@ const AdminReports = () => {
                 <p>Počet príspevkov v schránke</p>
               </div>
             </div>
+            <div className="stat-card">
+              <div className="stat-icon">🤖</div>
+              <div className="stat-info">
+                <h3>{reportData?.expertSystem?.count ?? 0}</h3>
+                <p>Počet použití expertného systému</p>
+              </div>
+            </div>
           </div>
 
           <div className="reports-grid">
