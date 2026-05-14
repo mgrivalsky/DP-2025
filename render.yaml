@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: e-psycholog-api
+    name: e-psycholog-api-2wzb
     env: docker
     plan: free
     region: frankfurt
@@ -17,13 +17,13 @@ services:
       - key: INIT_DB_ON_BOOT
         value: "true"
       - key: FRONTEND_URL
-        value: "https://e-psycholog-web.onrender.com"
+        value: "https://e-psycholog-web-2wzb.onrender.com"
       - key: SESSION_SECRET
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
       - key: GOOGLE_CALLBACK_URL
-        value: "https://e-psycholog-api.onrender.com/api/auth/google/callback"
+        value: "https://e-psycholog-api-2wzb.onrender.com/api/auth/google/callback"
 
       # ------------------------ DOPLNIŤ ------------------------
       # - key: DATABASE_URL
@@ -38,12 +38,12 @@ services:
       #   value: "email1@gmail.com,email2@gmail.com"  
 
   - type: web
-    name: e-psycholog-web
+    name: e-psycholog-web-2wzb
     env: static
     buildCommand: npm ci && npm run build
     staticPublishPath: build
     autoDeploy: true
     envVars:
       - key: REACT_APP_API_BASE
-        value: "https://e-psycholog-api.onrender.com"
+        value: "https://e-psycholog-api-2wzb.onrender.com"
 
