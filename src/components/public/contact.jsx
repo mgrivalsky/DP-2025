@@ -194,7 +194,7 @@ export const Contact = (props) => {
       <div id="footer">
         <div className="container text-center">
           <p>
-            &copy; 2025 E-psycholog. Autory návrhu{" "}
+            &copy; 2025 E-psychológ. Autory návrhu{" "}
             <a href="http://www.templatewire.com" rel="nofollow">
               TemplateWire
             </a>

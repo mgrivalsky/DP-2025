@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../database/db');
 const { authenticateToken } = require('../middleware/auth');
+const { encryptText, decryptFields } = require('../utils/fieldCrypto');
 
 router.use(authenticateToken);
 
@@ -152,7 +153,7 @@ router.get('/:chatId/messages', async (req, res) => {
        ORDER BY cas_odoslania ASC`,
       [chatId]
     );
-    res.json(result.rows);
+    res.json((result.rows || []).map((row) => decryptFields(row, ['obsah'])));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -302,7 +303,7 @@ router.post('/:chatId/message', async (req, res) => {
       `INSERT INTO Sprava (obsah, id_chatu, odesilatel_typ, videne) 
        VALUES ($1, $2, $3, false)
        RETURNING *`,
-      [obsah, chatIdNum, odesilatel_typ]
+      [encryptText(obsah), chatIdNum, odesilatel_typ]
     );
 
     // Update chat's last message timestamp
@@ -314,7 +315,7 @@ router.post('/:chatId/message', async (req, res) => {
     // Broadcast to connected clients (user + psycholog) to update UI without polling.
     try {
       const io = req.app?.get('io');
-      const payload = message.rows[0];
+      const payload = decryptFields(message.rows[0], ['obsah']);
       const userRoomId = Number(access?.chat?.id_uzivatela);
       const psychRoomId = Number(access?.chat?.id_psychologa);
       if (io) {
@@ -329,7 +330,7 @@ router.post('/:chatId/message', async (req, res) => {
       // ignore socket emit errors
     }
 
-    res.json(message.rows[0]);
+    res.json(decryptFields(message.rows[0], ['obsah']));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

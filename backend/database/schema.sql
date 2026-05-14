@@ -23,13 +23,13 @@ CREATE TABLE IF NOT EXISTS Psycholog (
 CREATE TABLE IF NOT EXISTS Schranka_dovery (
     id_prispevku SERIAL PRIMARY KEY,
     kategoria VARCHAR(100) NOT NULL,
-    obsah_prispevku VARCHAR(1000) NOT NULL,
+    obsah_prispevku TEXT NOT NULL,
     anonymne BOOLEAN DEFAULT false,
     publikovatelne BOOLEAN DEFAULT false,
     zverejnene BOOLEAN DEFAULT false,
     videne_psychologom BOOLEAN NOT NULL DEFAULT false,
     videne_uzivatelom BOOLEAN NOT NULL DEFAULT true,
-    odpoved VARCHAR(1000),
+    odpoved TEXT,
     datum_pridania TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id_psychologa INT REFERENCES Psycholog(id_psychologa) ON DELETE SET NULL,
     id_uzivatela INT REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS Chat (
 -- Tabuľka Správ
 CREATE TABLE IF NOT EXISTS Sprava (
     id_spravy SERIAL PRIMARY KEY,
-    obsah VARCHAR(1000) NOT NULL,
+    obsah TEXT NOT NULL,
     cas_odoslania TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     videne BOOLEAN DEFAULT false,
     id_chatu INT NOT NULL REFERENCES Chat(id_chatu) ON DELETE CASCADE,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS Rezervacia_sedeni (
     cas_do TIME NOT NULL,
     vytvorene TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     stav VARCHAR(50) NOT NULL DEFAULT 'vytvorena' CHECK (stav IN ('vytvorena', 'potvrdena', 'zrusena', 'dokoncena')),
-    poznamka VARCHAR(500),
+    poznamka TEXT,
     videne_psychologom BOOLEAN NOT NULL DEFAULT false,
     id_psychologa INT NOT NULL REFERENCES Psycholog(id_psychologa) ON DELETE RESTRICT,
     id_uzivatela INT NOT NULL REFERENCES Uzivatel(id_uzivatela) ON DELETE CASCADE,

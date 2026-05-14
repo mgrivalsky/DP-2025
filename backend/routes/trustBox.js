@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../database/db');
 const { authenticateToken } = require('../middleware/auth');
+const { encryptText, decryptFields } = require('../utils/fieldCrypto');
 
 const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
@@ -20,6 +21,10 @@ function emitTrustBoxUpdate(req, payload, { userId } = {}) {
   } catch {
     // ignore
   }
+}
+
+function decryptTrustRow(row) {
+  return decryptFields(row, ['obsah_prispevku', 'odpoved']);
 }
 
 // Submit a trust box message
@@ -53,10 +58,10 @@ router.post('/', authenticateToken, async (req, res) => {
       `INSERT INTO Schranka_dovery (kategoria, obsah_prispevku, anonymne, publikovatelne, id_uzivatela, id_psychologa, videne_psychologom, videne_uzivatelom)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id_prispevku, kategoria, obsah_prispevku, anonymne, publikovatelne, videne_psychologom, videne_uzivatelom, id_uzivatela, id_psychologa, datum_pridania` ,
-      [kategoria, obsah_prispevku, shouldBeAnonymous, publikovatelne, dbUserId, id_psychologa, false, true]
+      [kategoria, encryptText(obsah_prispevku), shouldBeAnonymous, publikovatelne, dbUserId, id_psychologa, false, true]
     );
 
-    const created = insert.rows[0];
+    const created = decryptTrustRow(insert.rows[0]);
     emitTrustBoxUpdate(req, { action: 'created', id: created?.id_prispevku || null });
     return res.status(201).json(created);
   } catch (err) {
@@ -77,7 +82,7 @@ router.get('/', authenticateToken, async (req, res) => {
         LEFT JOIN Uzivatel u ON u.id_uzivatela = sd.id_uzivatela
         ORDER BY sd.id_prispevku DESC`
       );
-      return res.json(result.rows || []);
+      return res.json((result.rows || []).map(decryptTrustRow));
     }
 
     const result = await pool.query(
@@ -88,7 +93,7 @@ router.get('/', authenticateToken, async (req, res) => {
        ORDER BY sd.id_prispevku DESC`,
       [req.user.id]
     );
-    return res.json(result.rows || []);
+    return res.json((result.rows || []).map(decryptTrustRow));
   } catch (err) {
     console.error('Error fetching trust box messages:', err);
     return res.status(500).json({ error: 'Chyba servera pri načítaní správ' });
@@ -189,7 +194,7 @@ router.put('/:id/mark-seen', authenticateToken, async (req, res) => {
     }
 
     emitTrustBoxUpdate(req, { action: 'markSeen', id });
-    return res.json(update.rows[0]);
+    return res.json(decryptTrustRow(update.rows[0]));
   } catch (error) {
     console.error('Mark single trust box seen error:', error);
     return res.status(500).json({ error: 'Chyba servera' });
@@ -225,7 +230,7 @@ router.put('/:id/mark-seen-user', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Správa nenájdená' });
     }
 
-    return res.json(update.rows[0]);
+    return res.json(decryptTrustRow(update.rows[0]));
   } catch (error) {
     console.error('Mark trust box seen by user error:', error);
     return res.status(500).json({ error: 'Chyba servera' });
@@ -247,8 +252,8 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     const shouldMarkUnseenByUser = typeof odpoved === 'string' && odpoved.trim().length > 0;
 
     // If a field is omitted from the request body, keep the DB value unchanged.
-    const odpovedParam = typeof odpoved === 'undefined' ? null : odpoved;
-    const obsahPrispevkuParam = typeof obsah_prispevku === 'undefined' ? null : obsah_prispevku;
+    const odpovedParam = typeof odpoved === 'undefined' ? null : encryptText(odpoved);
+    const obsahPrispevkuParam = typeof obsah_prispevku === 'undefined' ? null : encryptText(obsah_prispevku);
 
     const update = await pool.query(
       `UPDATE Schranka_dovery
@@ -265,7 +270,7 @@ router.patch('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Správa nenájdená' });
     }
 
-    const updatedRow = update.rows[0];
+    const updatedRow = decryptTrustRow(update.rows[0]);
     // Notify psycholog always; notify the owning user only when this change creates a new unseen reply.
     if (shouldMarkUnseenByUser && updatedRow?.id_uzivatela) {
       emitTrustBoxUpdate(req, { action: 'reply', id: Number(id) || null }, { userId: updatedRow.id_uzivatela });
@@ -300,7 +305,7 @@ router.patch('/:id/publish', authenticateToken, async (req, res) => {
     }
 
     emitTrustBoxUpdate(req, { action: 'published', id: Number(id) || null });
-    return res.json(update.rows[0]);
+    return res.json(decryptTrustRow(update.rows[0]));
   } catch (err) {
     console.error('Error publishing trust box message:', err);
     return res.status(500).json({ error: 'Chyba servera pri publikovaní' });
@@ -328,7 +333,7 @@ router.patch('/:id/unpublish', authenticateToken, async (req, res) => {
     }
 
     emitTrustBoxUpdate(req, { action: 'unpublished', id: Number(id) || null });
-    return res.json(update.rows[0]);
+    return res.json(decryptTrustRow(update.rows[0]));
   } catch (err) {
     console.error('Error unpublishing trust box message:', err);
     return res.status(500).json({ error: 'Chyba servera pri zrušení publikovania' });
@@ -348,7 +353,7 @@ router.get('/published', async (_req, res) => {
        ORDER BY sd.datum_pridania DESC`
     );
 
-    return res.json(result.rows || []);
+    return res.json((result.rows || []).map(decryptTrustRow));
   } catch (err) {
     console.error('Error fetching published trust box messages:', err);
     return res.status(500).json({ error: 'Chyba servera pri načítaní publikovaných správ' });

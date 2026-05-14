@@ -86,7 +86,7 @@ export const Navigation = () => {
             onClick={handleTopClick}
             data-scroll-ignore="true"
           >
-            E-psycholog
+            E-psychológ
           </a>
         </div>
 

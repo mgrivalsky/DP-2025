@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../database/db');
+const { encryptText, decryptFields } = require('../utils/fieldCrypto');
 
 const { authenticateToken } = require('../middleware/auth');
 
@@ -8,6 +9,10 @@ router.use(authenticateToken);
 
 const roleLower = (role) => String(role || '').toLowerCase();
 const isPsycholog = (role) => roleLower(role) === 'psycholog' || roleLower(role) === 'admin';
+
+function decryptReservationRow(row) {
+  return decryptFields(row, ['poznamka']);
+}
 
 function emitReservationUpdate(req, psychologId) {
   try {
@@ -64,10 +69,10 @@ router.post('/', async (req, res) => {
                  videne_psychologom,
                  id_psychologa,
                  id_uzivatela`,
-      [datum, cas_od, cas_do || cas_od, poznamka || null, psychologId || 1, userId, stav || 'vytvorena']
+      [datum, cas_od, cas_do || cas_od, encryptText(poznamka || null), psychologId || 1, userId, stav || 'vytvorena']
     );
 
-    const created = result.rows[0];
+    const created = decryptReservationRow(result.rows[0]);
     emitReservationUpdate(req, created?.id_psychologa);
     res.status(201).json({ message: 'OK', reservation: created });
   } catch (error) {
@@ -176,7 +181,7 @@ router.get('/', async (req, res) => {
         LEFT JOIN Psycholog p ON p.id_psychologa = r.id_psychologa
         ORDER BY r.datum DESC, r.cas_od DESC
       `);
-      return res.json(result.rows);
+      return res.json((result.rows || []).map(decryptReservationRow));
     }
 
     const result = await pool.query(`
@@ -188,7 +193,7 @@ router.get('/', async (req, res) => {
       WHERE r.id_uzivatela = $1
       ORDER BY r.datum DESC, r.cas_od DESC
     `, [req.user.id]);
-    return res.json(result.rows);
+    return res.json((result.rows || []).map(decryptReservationRow));
   } catch (error) {
     console.error('List reservations error:', error);
     res.status(500).json({ error: 'Chyba servera' });
@@ -236,7 +241,7 @@ router.patch('/:id', async (req, res) => {
     }
     if (poznamka !== undefined) {
       updates.push(`poznamka = $${paramCount}`);
-      params.push(poznamka);
+      params.push(encryptText(poznamka));
       paramCount++;
     }
     if (datum !== undefined) {
@@ -273,7 +278,7 @@ router.patch('/:id', async (req, res) => {
                            id_psychologa,
                            id_uzivatela`;
     const result = await pool.query(sql, params);
-    const updated = result.rows[0];
+    const updated = decryptReservationRow(result.rows[0]);
     emitReservationUpdate(req, updated?.id_psychologa);
     res.json({ message: 'OK', reservation: updated });
   } catch (error) {
@@ -358,7 +363,7 @@ router.delete('/:id', async (req, res) => {
 
     await client.query('COMMIT');
     emitReservationUpdate(req, reservation?.id_psychologa);
-    return res.json({ message: 'Rezervácia zrušená', deleted: deletedRes.rows[0], freedSlots: freed });
+    return res.json({ message: 'Rezervácia zrušená', deleted: decryptReservationRow(deletedRes.rows[0]), freedSlots: freed });
   } catch (error) {
     try {
       await client.query('ROLLBACK');

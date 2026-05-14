@@ -350,7 +350,7 @@ export const NavigationMain = () => {
             onClick={handleTopClick}
             data-scroll-ignore="true"
           >
-            E-psycholog
+            E-psychológ
           </a>
         </div>
 

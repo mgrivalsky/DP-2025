@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const { encryptText, decryptFields, ensureCryptoEnv } = require('./utils/fieldCrypto');
 
 const { initPassport } = require('./auth/passport');
 
@@ -46,6 +47,7 @@ if (!sessionSecretFromEnv) {
   console.warn('SESSION_SECRET is not set. Using a dev-only fallback secret.');
 }
 const SESSION_SECRET_EFFECTIVE = sessionSecretFromEnv || 'dev-session-secret-change-me';
+ensureCryptoEnv();
 
 // Trust upstream proxy (Render / reverse proxies) so req.ip and secure cookies work correctly.
 app.set('trust proxy', 1);
@@ -77,7 +79,7 @@ app.use(
 // - Socket.IO endpoint is excluded
 const otherLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: envPositiveInt('RATE_LIMIT_OTHER', 400),
+  limit: envPositiveInt('RATE_LIMIT_OTHER', 300),
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skip: (req) => {
@@ -91,7 +93,7 @@ const otherLimiter = rateLimit({
 
 const chatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: envPositiveInt('RATE_LIMIT_CHAT', isProd ? 800 : 1400),
+  limit: envPositiveInt('RATE_LIMIT_CHAT', isProd ? 500 : 1400),
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skip: (req) => String(req.path || '').startsWith('/socket.io/')
@@ -260,12 +262,12 @@ io.on('connection', (socket) => {
         `INSERT INTO Sprava (obsah, id_chatu, odesilatel_typ, videne)
          VALUES ($1, $2, $3, false)
          RETURNING *`,
-        [text, access.chatId, odesilatel_typ]
+        [encryptText(text), access.chatId, odesilatel_typ]
       );
 
       await pool.query('UPDATE Chat SET posledna_sprava = CURRENT_TIMESTAMP WHERE id_chatu = $1', [access.chatId]);
 
-      const payload = message.rows[0];
+      const payload = decryptFields(message.rows[0], ['obsah']);
       const userRoomId = Number(access?.chat?.id_uzivatela);
       const psychRoomId = Number(access?.chat?.id_psychologa);
 
@@ -286,6 +288,13 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+async function ensureEncryptedColumnsUseText() {
+  await pool.query('ALTER TABLE IF EXISTS Sprava ALTER COLUMN obsah TYPE TEXT');
+  await pool.query('ALTER TABLE IF EXISTS Schranka_dovery ALTER COLUMN obsah_prispevku TYPE TEXT');
+  await pool.query('ALTER TABLE IF EXISTS Schranka_dovery ALTER COLUMN odpoved TYPE TEXT');
+  await pool.query('ALTER TABLE IF EXISTS Rezervacia_sedeni ALTER COLUMN poznamka TYPE TEXT');
+}
 
 async function initDbIfEnabled() {
   const enabled = String(process.env.INIT_DB_ON_BOOT || '').toLowerCase() === 'true';
@@ -317,6 +326,7 @@ async function initDbIfEnabled() {
 }
 
 async function bootstrap() {
+  await ensureEncryptedColumnsUseText();
   await initDbIfEnabled();
 
   server.listen(PORT, () => {
