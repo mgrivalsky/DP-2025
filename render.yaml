@@ -23,7 +23,18 @@ services:
         generateValue: true
       - key: GOOGLE_CALLBACK_URL
         value: "https://e-psycholog-api.onrender.com/api/auth/google/callback"
-      # DATABASE_URL nastavte v Render dashboarde (external Postgres, napr. Neon/Supabase)
+
+      # ------------------------ DOPLNIŤ ------------------------
+      # - key: DATABASE_URL
+      #   value: "postgresql://USER:PASSWORD@HOST/DB?sslmode=require"  
+      # - key: DATA_ENCRYPTION_KEY
+      #   value: "<base64 32-byte key>"  # nemenit po nasadeni
+      # - key: GOOGLE_CLIENT_ID
+      #   value: "<from Google Cloud Console>"
+      # - key: GOOGLE_CLIENT_SECRET
+      #   value: "<from Google Cloud Console>"
+      # - key: ADMIN_EMAILS
+      #   value: "email1@gmail.com,email2@gmail.com"  
 
   - type: web
     name: e-psycholog-web

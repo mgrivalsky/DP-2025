@@ -351,6 +351,17 @@ body {
   color: #fff !important;
 }
 
+:root[data-theme='dark'] .btn-google {
+  background: #111 !important;
+  border-color: #444 !important;
+  color: #fff !important;
+}
+
+:root[data-theme='dark'] .btn-google:hover {
+  background: #171717 !important;
+  border-color: #608dfd !important;
+}
+
 /* User trust box overrides (key readability bits) */
 :root[data-theme='dark'] .user-trustbox__title,
 :root[data-theme='dark'] .user-trustbox__formTitle,

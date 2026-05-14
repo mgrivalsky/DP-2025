@@ -52,10 +52,9 @@ export const Contact = (props) => {
     setStatusMessage("Správa bola úspešne odoslaná.");
     setIsSuccess(true);
     clearState();
- // Skryť správu po 3 sekundách
     setTimeout(() => {
       setStatusMessage("");
-    }, 1800);
+    }, 2500);
   }, 1000);
 };
 
@@ -194,11 +193,11 @@ export const Contact = (props) => {
       <div id="footer">
         <div className="container text-center">
           <p>
-            &copy; 2025 E-psychológ. Autory návrhu{" "}
+            &copy; 2025 E-psychológ – Matúš Grivalský.
+            Použitá šablóna:{" "}
             <a href="http://www.templatewire.com" rel="nofollow">
               TemplateWire
             </a>
-            &nbsp;a&nbsp;Matúš Grivalský
           </p>
         </div>
       </div>

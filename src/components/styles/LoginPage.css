@@ -5,14 +5,15 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #608dfd 0%, #5ca9fb 100%);
   position: relative;
+  padding: 32px 16px;
 }
 
 .login-content {
   width: 100%;
-  max-width: 500px;
+  max-width: 680px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
   align-items: center;
 }
 
@@ -54,25 +55,27 @@
 
 .login-box {
   background: white;
-  padding: 3rem 2.5rem;
-  border-radius: 15px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 3.25rem 3rem;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
   width: 100%;
-  max-width: 500px;
+  max-width: 640px;
   text-align: center;
 }
 
 .login-box h2 {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
   color: #333;
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .login-info {
   text-align: left;
-  margin: -0.75rem 0 1.25rem;
-  padding: 0.95rem 1rem;
+  margin: -0.25rem 0 1.35rem;
+  padding: 1.05rem 1.1rem;
   border: 1px solid #eee;
   border-radius: 10px;
   background: #f8f9ff;
@@ -87,7 +90,7 @@
 
 .login-info__text {
   color: #666;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -96,7 +99,7 @@
   padding-top: 10px;
   border-top: 1px solid #eee;
   color: #666;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -228,18 +231,23 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 0.9rem;
+  padding: 1rem;
   border: 1.5px solid #ddd;
-  border-radius: 8px;
+  border-radius: 12px;
   background: white;
   cursor: pointer;
   font-weight: 700;
-  font-size: 15px;
-  text-transform: uppercase;
+  font-size: 16px;
+  text-transform: none;
   color: #333;
   transition: all 0.3s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   box-sizing: border-box;
+}
+
+.btn-google:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(96, 141, 253, 0.25), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .btn-google:hover {
@@ -251,6 +259,21 @@
 
 .btn-google:active {
   transform: translateY(0);
+}
+
+@media (max-width: 520px) {
+  .login-container {
+    padding: 22px 14px;
+  }
+
+  .login-box {
+    padding: 2.25rem 1.35rem;
+    border-radius: 16px;
+  }
+
+  .login-box h2 {
+    font-size: 1.85rem;
+  }
 }
 
 
