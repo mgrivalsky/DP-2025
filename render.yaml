@@ -21,12 +21,6 @@ services:
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
-      - key: ADMIN_EMAILS
-        value: ""
-      - key: GOOGLE_CLIENT_ID
-        value: ""
-      - key: GOOGLE_CLIENT_SECRET
-        value: ""
       - key: GOOGLE_CALLBACK_URL
         value: "https://e-psycholog-api.onrender.com/api/auth/google/callback"
       # DATABASE_URL nastavte v Render dashboarde (external Postgres, napr. Neon/Supabase)
