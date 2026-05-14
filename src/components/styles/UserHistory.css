@@ -150,18 +150,18 @@
   margin-top: 8px;
   padding: 7px 12px;
   border-radius: 10px;
-  border: 1px solid #f5c6cb;
-  background: white;
+  border: 1px solid #f54339;
+  background: #f54339;
   cursor: pointer;
   font-weight: 700;
   font-size: 0.85rem;
-  color: #a02721;
+  color: #fff;
   transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
 .user-history__cancelBtn:hover {
-  background: #fdecea;
-  border-color: #f5c6cb;
+  background: #d9342b;
+  border-color: #d9342b;
 }
 
 .user-history__cancelBtn:active {
@@ -179,9 +179,13 @@
 }
 
 .user-history__status {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
   font-size: 0.85rem;
   font-weight: 700;
 }
