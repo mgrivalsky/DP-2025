@@ -22,6 +22,7 @@ npm install
 3. Nastavte PostgreSQL:
 
 ### Inštalácia PostgreSQL na Windows:
+
 - Stiahnite PostgreSQL z https://www.postgresql.org/download/windows/
 - Spustite inštalátor a postupujte podľa pokynov
 - Zaznamenajte si heslo pre používateľa postgres
@@ -40,6 +41,7 @@ psql -U postgres -d e_psycholog -f database/schema.sql
 ```
 
 Alebo v pgAdmin:
+
 - Kliknite pravým tlačidlom na databázu e_psycholog
 - Query Tool
 - Otvorte súbor database/schema.sql
@@ -55,6 +57,35 @@ DB_USER=postgres
 DB_PASSWORD=vase_heslo
 JWT_SECRET=nahodny_tajny_kluc
 ```
+
+### Alternatíva: bezplatná databáza mimo Render (Neon / Supabase)
+
+Ak vám skončil free tier databázy na Renderi, backend môžete nechať bežať na Renderi a databázu presunúť na externého poskytovateľa PostgreSQL.
+
+Podporované je aj pripojenie cez jednu premennú `DATABASE_URL` (preferuje sa pred `DB_*`).
+
+**Odporúčané bezplatné možnosti**
+
+- **Neon (serverless Postgres)**: vytvoríte DB a dostanete connection string typu `postgresql://...?...sslmode=require`.
+- **Supabase (Postgres + UI)**: rovnako poskytuje `postgresql://...` connection string.
+
+**Nastavenie na Renderi (backend)**
+
+1. V Render dashboarde otvorte službu backendu (napr. `e-psycholog-api`).
+2. Environment → pridajte/nahraďte premennú:
+   - `DATABASE_URL` = váš connection string (z Neon/Supabase)
+3. Nechajte `INIT_DB_ON_BOOT=true` (Render blueprint to už nastavuje). Pri štarte sa spustí `database/schema.sql`.
+
+Poznámka: Väčšina hosted Postgres riešení vyžaduje SSL. Backend to rieši automaticky pre `DATABASE_URL` v produkcii a aj lokálne, ak máte v URL `sslmode=require`.
+
+**Migrácia dát (ak ešte máte prístup k starej DB)**
+
+Ak chcete preniesť aj dáta, spravte export a import:
+
+- Export (zo starej DB): `pg_dump <OLD_DATABASE_URL> > backup.sql`
+- Import (do novej DB): `psql <NEW_DATABASE_URL> -f backup.sql`
+
+Ak už stará Render DB nie je dostupná, stačí prázdna DB — schéma sa vytvorí pri boote (alebo ručne spustením `database/schema.sql`).
 
 7. Spustite server:
 
