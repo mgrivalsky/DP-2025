@@ -35,8 +35,11 @@ export const About = (props) => {
           </div>
           <div className="col-xs-12 col-md-6">
             <div className="about-text">
+
               <h2>O nás</h2>
-              <p>{props.data ? props.data.paragraph : "loading..."}</p>
+              <p style={{ textAlign: "justify" }}>
+                {props.data ? props.data.paragraph : "loading..."}
+              </p>
               <h3>Čo ponúkame?</h3>
               <div className="list-style">
                 <div className="col-lg-6 col-sm-6 col-xs-12">

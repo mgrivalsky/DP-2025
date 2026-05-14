@@ -11,11 +11,11 @@
 
 
   "About": {
-    "paragraph": "Naša aplikácia vznikla s cieľom podporiť školských psychológov pri ich náročnej práci so študentami a mladými ľuďmi. Veríme, že moderné technológie môžu zjednodušiť prácu, sprístupniť cenné informácie a zlepšiť komunikáciu medzi psychológom, študentami a ich rodičmi. Naším poslaním je vytvoriť bezpečné a užívateľsky prívetivé prostredie, ktoré pomáha riešiť emocionálne a psychické výzvy mladých ľudí.",
-  "Why": [
+    "paragraph": "Naša aplikácia vznikla s cieľom podporiť školských psychológov pri ich práci so študentami a mladými ľuďmi. Veríme, že moderné technológie môžu zjednodušiť prácu, sprístupniť dôležité informácie a zlepšiť komunikáciu medzi psychológom, študentami a ich rodičmi. Snažíme sa vytvoriť prostredie, kde je jednoduchšie vyhľadať pomoc, otvorene hovoriť o svojich pocitoch a nájsť podporu v náročnejších situáciách. Aplikácia zároveň uľahčuje kontakt so školským psychológom, aby bol dostupnejší a prirodzenejšou súčasťou školského prostredia.",
+    "Why": [
     "Jednoduchá správa údajov",
     "Lepšia komunikácia",
-    "Sledovanie pokroku",
+    "Anonymné otázky alebo správy",
     "Dostupná podpora"
   ],
   "Why2": [
