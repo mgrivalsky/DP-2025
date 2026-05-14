@@ -43,6 +43,10 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: build
     autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: REACT_APP_API_BASE
         value: "https://e-psycholog-api-2wzb.onrender.com"
