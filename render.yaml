@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: e-psycholog-api
+    name: e-psycholog-api-2wzb
     env: docker
     plan: free
     region: frankfurt
@@ -36,7 +36,6 @@ services:
       #   value: "<from Google Cloud Console>"
       # - key: ADMIN_EMAILS
       #   value: "email1@gmail.com,email2@gmail.com"  
-
 
   - type: web
     name: e-psycholog-web-2wzb
