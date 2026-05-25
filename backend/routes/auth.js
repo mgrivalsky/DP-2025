@@ -18,10 +18,13 @@ function frontendBaseUrl() {
 }
 
 const ALLOWED_EMAIL_SUFFIXES = ['@student.spseke.sk', '@spseke.sk'];
+// Explicit allowlist for non-school emails (e.g., temporary testing accounts)
+const ALLOWED_EMAILS = ['mgrivalsky123@gmail.com'];
 
 function isAllowedSchoolEmail(email) {
   const emailNorm = String(email || '').trim().toLowerCase();
   if (!emailNorm || !emailNorm.includes('@')) return false;
+  if (ALLOWED_EMAILS.includes(emailNorm)) return true;
   return ALLOWED_EMAIL_SUFFIXES.some((suffix) => emailNorm.endsWith(suffix));
 }
 

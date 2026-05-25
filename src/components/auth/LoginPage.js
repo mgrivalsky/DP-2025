@@ -14,7 +14,7 @@ export default function LoginPage() {
     if (!oauth) return;
 
     if (oauth === 'domain_not_allowed') {
-      setError('Prihlásiť sa môžete len s e-mailom končiacim na @student.spseke.sk alebo @spseke.sk.');
+      setError('Prístup zamietnutý. Povolené sú iba školské účty.');
       return;
     }
     if (oauth === 'missing_email') {
