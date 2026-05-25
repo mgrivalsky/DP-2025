@@ -17,6 +17,14 @@ function frontendBaseUrl() {
   return process.env.FRONTEND_URL || 'http://localhost:3000';
 }
 
+const ALLOWED_EMAIL_SUFFIXES = ['@student.spseke.sk', '@spseke.sk'];
+
+function isAllowedSchoolEmail(email) {
+  const emailNorm = String(email || '').trim().toLowerCase();
+  if (!emailNorm || !emailNorm.includes('@')) return false;
+  return ALLOWED_EMAIL_SUFFIXES.some((suffix) => emailNorm.endsWith(suffix));
+}
+
 function userTypeFromEmail(email) {
   const emailNorm = String(email || '').trim().toLowerCase();
   return emailNorm.endsWith('@spseke.sk') ? 'ucitel' : 'student';
@@ -122,6 +130,10 @@ router.get(
       const familyName = req.user?.familyName || '';
       if (!email) {
         return res.redirect(`${frontendBaseUrl()}/login?oauth=missing_email`);
+      }
+
+      if (!isAllowedSchoolEmail(email)) {
+        return res.redirect(`${frontendBaseUrl()}/login?oauth=domain_not_allowed`);
       }
 
       const admins = parseAdminEmails();

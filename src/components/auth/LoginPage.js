@@ -1,11 +1,35 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import '../styles/LoginPage.css';
 
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const oauth = String(params.get('oauth') || '').trim().toLowerCase();
+    if (!oauth) return;
+
+    if (oauth === 'domain_not_allowed') {
+      setError('Prihlásiť sa môžete len s e-mailom končiacim na @student.spseke.sk alebo @spseke.sk.');
+      return;
+    }
+    if (oauth === 'missing_email') {
+      setError('Google účet nemá sprístupnený e-mail. Skúste iný účet.');
+      return;
+    }
+    if (oauth === 'server_error') {
+      setError('Chyba servera pri prihlásení. Skúste neskôr.');
+      return;
+    }
+    if (oauth === 'failed') {
+      setError('Prihlásenie cez Google zlyhalo. Skúste znova.');
+      return;
+    }
+  }, [location.search]);
 
   const handleGoogleLogin = (e) => {
     e.preventDefault();
